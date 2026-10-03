@@ -13,6 +13,7 @@ import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
+import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
 
 const specPath = fileURLToPath(new URL('../openapi/openapi.yaml', import.meta.url));
 const openApiDocument = YAML.parse(readFileSync(specPath, 'utf8'));
@@ -80,6 +81,7 @@ export function createApp(options = {}) {
   api.use('/users', usersRouter);
   api.use('/authors', authorsRouter);
   api.use('/cart', cartRouter);
+  api.use('/wishlist', wishlistRouter);
   api.use(catalogRouter);
 
   app.use('/api', api);
