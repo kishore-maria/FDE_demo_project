@@ -7,6 +7,7 @@ import {
   customerAddress,
   customerFollows,
   customerOrders,
+  reviews,
   users,
 } from './data/users.js';
 import { stableId } from './ids.js';
@@ -235,10 +236,21 @@ export async function seedUsersAndOrders(prisma, now = new Date()) {
     });
   }
 
+  for (const { user, book, daysAgo: age, ...review } of reviews) {
+    const userId = userIds[user];
+    const bookId = stableId('book', book);
+    await prisma.review.upsert({
+      where: { bookId_userId: { bookId, userId } },
+      create: { id: stableId('review', `${user}:${book}`), bookId, userId, ...review, createdAt: daysAgo(age, now) },
+      update: review,
+    });
+  }
+
   return {
     users: users.length,
     coupons: coupons.length,
     orders: customerOrders.length,
     follows: customerFollows.length,
+    reviews: reviews.length,
   };
 }

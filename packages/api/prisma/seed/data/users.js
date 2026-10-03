@@ -119,3 +119,10 @@ export const customerFollows = [
   { author: 'daniel-reed', source: 'AUTO_PURCHASE' },
   { author: 'sophia-bennett', source: 'AUTO_PURCHASE' },
 ];
+
+// Already counted in the books' seeded ratingAvg/ratingCount baseline, so seeding them doesn't touch ratings.
+export const reviews = [
+  { user: 'customer', book: 'less-but-better', rating: 5, comment: 'Short, practical and genuinely calming.', daysAgo: 20 },
+  { user: 'customer', book: 'the-silent-witness', rating: 4, comment: 'Kept me guessing until the last chapter.', daysAgo: 2 },
+  { user: 'fresh', book: 'joy-of-minimalism', rating: 5, comment: 'A calm, practical guide. Loved it!', daysAgo: 5 },
+];

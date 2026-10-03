@@ -10,6 +10,9 @@ export const bookSummaryInclude = {
 const byPrimaryThenName = (a, b) =>
   Number(b.isPrimary) - Number(a.isPrimary) || a.category.name.localeCompare(b.category.name);
 
+/** ratingAvg is stored unrounded (incremental updates); expose 2 decimals. */
+export const roundRating = (value) => Math.round(value * 100) / 100;
+
 /** Card-level shape of a book used by lists, cart, wishlist and orders. */
 export function serializeBookSummary(book, now = new Date()) {
   return {
@@ -35,7 +38,7 @@ export function serializeBookSummary(book, now = new Date()) {
     format: book.format,
     language: book.language,
     coverImageUrl: book.coverImageUrl,
-    ratingAvg: book.ratingAvg,
+    ratingAvg: roundRating(book.ratingAvg),
     ratingCount: book.ratingCount,
     salesCount: book.salesCount,
     inStock: book.stockQuantity > 0,
@@ -63,5 +66,16 @@ export function serializePublisher(publisher) {
     description: publisher.description ?? null,
     logoUrl: publisher.logoUrl ?? null,
     ...(publisher._count && { bookCount: publisher._count.books }),
+  };
+}
+
+/** Expects the review to include `user: { select: { firstName: true } }`. */
+export function serializeReview(review) {
+  return {
+    id: review.id,
+    rating: review.rating,
+    comment: review.comment ?? null,
+    createdAt: review.createdAt,
+    reviewer: { firstName: review.user.firstName },
   };
 }

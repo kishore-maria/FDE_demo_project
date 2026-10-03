@@ -2,12 +2,16 @@ import { badRequest, notFound } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import {
   bookSummaryInclude,
+  roundRating,
   serializeBookSummary,
   serializeCategory,
   serializePublisher,
+  serializeReview,
 } from './catalog.serializer.js';
 
 export const DEFAULT_PAGE_SIZE = 12;
+const RELATED_BOOKS_LIMIT = 5;
+const REVIEWS_LIMIT = 20;
 
 // id is the final tie-breaker so pagination is stable.
 const ORDER_BY = {
@@ -160,4 +164,111 @@ export async function getPublisher(publisherId) {
   });
   if (!publisher) throw notFound('Publisher not found');
   return serializePublisher(publisher);
+}
+
+const reviewerInclude = { user: { select: { firstName: true } } };
+
+const bookDetailInclude = {
+  ...bookSummaryInclude,
+  author: { include: { _count: { select: { books: true } } } },
+  categories: {
+    include: {
+      category: { select: { id: true, name: true, slug: true, parent: { select: { id: true, name: true, slug: true } } } },
+    },
+  },
+  reviews: { include: reviewerInclude, orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: REVIEWS_LIMIT },
+  relationsFrom: {
+    include: { relatedBook: { include: bookSummaryInclude } },
+    orderBy: { relatedBook: { title: 'asc' } },
+  },
+};
+
+async function personalFlags(user, book) {
+  if (!user) return { isWishlisted: null, isFollowingAuthor: null };
+  const [wishlisted, following] = await Promise.all([
+    prisma.wishlistItem.findUnique({ where: { userId_bookId: { userId: user.id, bookId: book.id } } }),
+    prisma.authorFollow.findUnique({ where: { userId_authorId: { userId: user.id, authorId: book.authorId } } }),
+  ]);
+  return { isWishlisted: Boolean(wishlisted), isFollowingAuthor: Boolean(following) };
+}
+
+/** GET /books/:id — full product page payload. */
+export async function getBookDetail(bookId, user) {
+  const book = await prisma.book.findUnique({ where: { id: bookId }, include: bookDetailInclude });
+  if (!book) throw notFound('Book not found');
+
+  const primary = (book.categories.find((link) => link.isPrimary) ?? book.categories[0])?.category;
+  const [relatedBooks, flags] = await Promise.all([
+    primary
+      ? prisma.book.findMany({
+          where: { id: { not: book.id }, categories: { some: { categoryId: primary.id } } },
+          include: bookSummaryInclude,
+          orderBy: [{ ratingAvg: 'desc' }, { ratingCount: 'desc' }, { id: 'asc' }],
+          take: RELATED_BOOKS_LIMIT,
+        })
+      : [],
+    personalFlags(user, book),
+  ]);
+
+  const now = new Date();
+  const relatedOfType = (type) =>
+    book.relationsFrom
+      .filter((relation) => relation.type === type)
+      .map((relation) => serializeBookSummary(relation.relatedBook, now));
+  const toRef = ({ id, name, slug }) => ({ id, name, slug });
+
+  return {
+    ...serializeBookSummary(book, now),
+    description: book.description,
+    isbn: book.isbn ?? null,
+    backCoverImageUrl: book.backCoverImageUrl ?? null,
+    publishedAt: book.publishedAt,
+    stockQuantity: book.stockQuantity,
+    isEditorsPick: book.isEditorsPick,
+    author: {
+      id: book.author.id,
+      name: book.author.name,
+      slug: book.author.slug,
+      photoUrl: book.author.photoUrl ?? null,
+      bio: book.author.bio,
+      bookCount: book.author._count.books,
+    },
+    breadcrumb: primary ? [primary.parent, primary].filter(Boolean).map(toRef) : [],
+    reviews: book.reviews.map(serializeReview),
+    relatedBooks: relatedBooks.map((related) => serializeBookSummary(related, now)),
+    upsell: relatedOfType('UPSELL'),
+    crossSell: relatedOfType('CROSS_SELL'),
+    ...flags,
+  };
+}
+
+/**
+ * POST /books/:id/reviews — one review per user per book.
+ * Seeded books carry a rating baseline without review rows, so the aggregate is
+ * adjusted incrementally under a row lock instead of recomputed from the reviews table.
+ */
+export async function upsertReview(userId, bookId, { rating, comment }) {
+  return prisma.$transaction(async (tx) => {
+    const [book] = await tx.$queryRaw`
+      SELECT rating_avg AS "ratingAvg", rating_count AS "ratingCount"
+      FROM books WHERE id = ${bookId}::uuid FOR UPDATE`;
+    if (!book) throw notFound('Book not found');
+
+    const key = { bookId_userId: { bookId, userId } };
+    const existing = await tx.review.findUnique({ where: key, select: { rating: true } });
+    const data = { rating, comment: comment?.trim() || null };
+    const review = await tx.review.upsert({
+      where: key,
+      create: { bookId, userId, ...data },
+      update: data,
+      include: reviewerInclude,
+    });
+
+    const ratingCount = book.ratingCount + (existing ? 0 : 1);
+    const ratingSum = book.ratingAvg * book.ratingCount - (existing?.rating ?? 0) + rating;
+    const ratingAvg = Math.min(5, Math.max(0, ratingSum / ratingCount));
+    await tx.book.update({ where: { id: bookId }, data: { ratingAvg, ratingCount } });
+
+    return { review: serializeReview(review), ratingAvg: roundRating(ratingAvg), ratingCount };
+  });
 }

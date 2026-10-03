@@ -15,3 +15,11 @@ export async function getPublisher(req, res) {
 export async function listBooks(req, res) {
   res.json(await catalog.listBooks(req.query));
 }
+
+export async function getBook(req, res) {
+  res.json(await catalog.getBookDetail(req.params.bookId, req.user));
+}
+
+export async function upsertReview(req, res) {
+  res.json(await catalog.upsertReview(req.user.id, req.params.bookId, req.body));
+}

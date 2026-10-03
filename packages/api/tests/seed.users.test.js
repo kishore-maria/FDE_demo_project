@@ -19,6 +19,7 @@ async function seededCounts() {
     'shipmentEvent',
     'giftPointTransaction',
     'authorFollow',
+    'review',
     'book',
     'category',
   ];
