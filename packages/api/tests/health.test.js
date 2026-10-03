@@ -44,7 +44,7 @@ describe('error handling', () => {
   });
 
   test('documented route without a handler yet returns 404', async () => {
-    const res = await request(app).get('/api/categories');
+    const res = await request(app).get('/api/stores/bookworm-main');
     expect(res.status).toBe(404);
   });
 

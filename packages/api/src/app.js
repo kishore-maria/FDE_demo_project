@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
 const specPath = fileURLToPath(new URL('../openapi/openapi.yaml', import.meta.url));
@@ -75,6 +76,7 @@ export function createApp(options = {}) {
   });
   api.use('/auth', authRouter);
   api.use('/users', usersRouter);
+  api.use(catalogRouter);
 
   app.use('/api', api);
   app.use(notFoundHandler);
