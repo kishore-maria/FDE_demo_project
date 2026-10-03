@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { conflict, unauthorized } from '../../lib/errors.js';
 import { signToken } from '../../lib/jwt.js';
@@ -46,6 +47,32 @@ export async function login({ email, password }) {
   const valid = await verifyPassword(password, user?.passwordHash);
   if (!user || !valid) throw unauthorized('Invalid email or password', 'INVALID_CREDENTIALS');
   return authResponse(user);
+}
+
+/**
+ * Starts a guest checkout session. Registered emails must log in instead (409 ACCOUNT_EXISTS),
+ * so a guest token can never be issued for a real account. Every call gets a fresh gsid, which
+ * scopes the token to orders placed in this session only.
+ */
+export async function createGuestSession({ email }) {
+  const normalized = normalizeEmail(email);
+  const existing = await prisma.user.findUnique({ where: { email: normalized } });
+  if (existing && existing.role !== 'GUEST') {
+    throw conflict('This email has an account. Please log in to continue.', 'ACCOUNT_EXISTS');
+  }
+
+  const user =
+    existing ??
+    (await prisma.user.upsert({
+      where: { email: normalized },
+      create: { email: normalized, role: 'GUEST', passwordHash: null },
+      update: {},
+    }));
+  if (user.role !== 'GUEST') {
+    throw conflict('This email has an account. Please log in to continue.', 'ACCOUNT_EXISTS');
+  }
+
+  return authResponse(user, { gsid: randomUUID() });
 }
 
 export async function getProfile(userId) {

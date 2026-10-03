@@ -8,6 +8,10 @@ export async function login(req, res) {
   res.json(await authService.login(req.body));
 }
 
+export async function createGuestSession(req, res) {
+  res.json(await authService.createGuestSession(req.body));
+}
+
 export async function getProfile(req, res) {
   res.json(await authService.getProfile(req.user.id));
 }
