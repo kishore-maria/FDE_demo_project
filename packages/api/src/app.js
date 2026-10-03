@@ -9,6 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { authorsRouter } from './modules/authors/authors.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
@@ -76,6 +77,7 @@ export function createApp(options = {}) {
   });
   api.use('/auth', authRouter);
   api.use('/users', usersRouter);
+  api.use('/authors', authorsRouter);
   api.use(catalogRouter);
 
   app.use('/api', api);

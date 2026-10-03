@@ -5,7 +5,7 @@ import { bookSummaryInclude, serializeBookSummary } from './catalog.serializer.j
 const RECOMMENDATION_LIMIT = 10;
 const COLLECTION_LIMIT = 12;
 // Orders that represent a real purchase (paid at some point).
-const PURCHASED_STATUSES = ['CONFIRMED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED'];
+export const PURCHASED_STATUSES = ['CONFIRMED', 'SHIPPED', 'DELIVERED', 'RETURN_REQUESTED', 'RETURNED'];
 
 const serializeAll = (books) => {
   const now = new Date();

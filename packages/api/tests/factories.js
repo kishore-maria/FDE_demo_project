@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { generateOrderNumber } from 'bookworm-shared';
 import request from 'supertest';
+import { stableId } from '../prisma/seed/ids.js';
 import { signToken } from '../src/lib/jwt.js';
 import { prisma } from '../src/lib/prisma.js';
 
@@ -38,4 +40,29 @@ export async function loginAs(app, email, password = DEFAULT_TEST_PASSWORD) {
 /** Signs a token directly (no HTTP round-trip), e.g. for guests or custom claims. */
 export function tokenFor(user, options) {
   return signToken(user, options);
+}
+
+/** Minimal order for purchase-history tests; amounts are zero, books are seed slugs. */
+export function createOrder(userId, bookSlugs, status = 'DELIVERED') {
+  return prisma.order.create({
+    data: {
+      orderNumber: generateOrderNumber(),
+      userId,
+      contactEmail: 'test@test.bookworm',
+      shippingAddress: {},
+      subtotalPaise: 0,
+      taxPaise: 0,
+      deliveryChargePaise: 0,
+      totalPaise: 0,
+      status,
+      items: {
+        create: bookSlugs.map((slug) => ({
+          bookId: stableId('book', slug),
+          titleSnapshot: slug,
+          quantity: 1,
+          priceAtPurchasePaise: 0,
+        })),
+      },
+    },
+  });
 }

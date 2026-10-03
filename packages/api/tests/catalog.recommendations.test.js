@@ -1,35 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
-import { generateOrderNumber } from 'bookworm-shared';
 import { describe, expect, test } from 'vitest';
 import { stableId } from '../prisma/seed/ids.js';
 import { createApp } from '../src/app.js';
 import { prisma } from '../src/lib/prisma.js';
-import { authHeader, createUser, loginAs, tokenFor } from './factories.js';
+import { authHeader, createOrder as placeOrder, createUser, loginAs, tokenFor } from './factories.js';
 
 const app = createApp();
 const bookId = (slug) => stableId('book', slug);
 const titles = (res) => res.body.items.map((b) => b.title);
 const recommended = (headers = {}) => request(app).get('/api/books/recommended').set(headers);
-
-async function placeOrder(userId, slugs, status = 'DELIVERED') {
-  await prisma.order.create({
-    data: {
-      orderNumber: generateOrderNumber(),
-      userId,
-      contactEmail: 'test@test.bookworm',
-      shippingAddress: {},
-      subtotalPaise: 0,
-      taxPaise: 0,
-      deliveryChargePaise: 0,
-      totalPaise: 0,
-      status,
-      items: {
-        create: slugs.map((slug) => ({ bookId: bookId(slug), titleSnapshot: slug, quantity: 1, priceAtPurchasePaise: 0 })),
-      },
-    },
-  });
-}
 
 describe('GET /api/books/recommended', () => {
   const editorsPicks = ['The Art of Focus', 'The Art of Learning', 'The Path to Success'];
