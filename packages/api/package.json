@@ -16,6 +16,9 @@
     "db:studio": "prisma studio",
     "spec:validate": "node scripts/validate-spec.js"
   },
+  "prisma": {
+    "seed": "node prisma/seed/index.js"
+  },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
