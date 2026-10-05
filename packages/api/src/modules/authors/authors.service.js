@@ -6,7 +6,7 @@ import { PURCHASED_STATUSES } from '../catalog/recommendation.service.js';
 const NEW_RELEASES_LIMIT = 12;
 const SUGGESTIONS_LIMIT = 10;
 
-const authorCardInclude = {
+export const authorCardInclude = {
   _count: { select: { books: true } },
   books: {
     select: {
@@ -33,7 +33,7 @@ function topCategory(books) {
 }
 
 /** `followedIds` is undefined for anonymous requests, which omits isFollowing. */
-function serializeAuthor(author, followedIds) {
+export function serializeAuthor(author, followedIds) {
   return {
     id: author.id,
     name: author.name,

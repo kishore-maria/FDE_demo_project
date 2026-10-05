@@ -10,7 +10,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import { AppError } from './lib/errors.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
-import { adminRouter } from './modules/admin/admin.routes.js';
+import { adminRouter, storesRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
@@ -104,6 +104,7 @@ export function createApp(options = {}) {
   api.use('/orders', ordersRouter);
   api.use('/payments', paymentsRouter);
   api.use('/shipments', shipmentsRouter);
+  api.use('/stores', storesRouter);
   api.use('/admin', adminRouter);
   api.use(catalogRouter);
 

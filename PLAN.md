@@ -380,7 +380,7 @@ Steps: public lookup router (rate-limited, generic 404); PUT /auth/set-password 
 🧪 Tests: `guest.flow.test.js` — full flow + negatives.
 
 #### MT-21 — Admin / Store API
-Status: [ ] · Depends: MT-20
+Status: [x] · Depends: MT-20
 Steps: GET /stores/:slug (public, with policies); ADMIN CRUD for books (with categories, relations), categories, publishers, authors, coupons, stores, policies; GET /admin/orders (filters status, paginated).
 ✅ Verify: admin creates a book → appears in catalog · customer → 403 · deleting a category with books → 409.
 🧪 Tests: `admin.test.js` — CRUD happy paths + 403 + 409.

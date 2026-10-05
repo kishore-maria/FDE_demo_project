@@ -2507,6 +2507,10 @@ components:
           type: array
           items: { $ref: '#/components/schemas/OrderItem' }
         flags: { $ref: '#/components/schemas/OrderFlags' }
+        shipments:
+          type: array
+          description: Included in the admin order list so shipments can be advanced from there.
+          items: { $ref: '#/components/schemas/Shipment' }
 
     OrderPage:
       allOf:

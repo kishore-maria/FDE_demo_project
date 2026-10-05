@@ -43,9 +43,10 @@ describe('error handling', () => {
     expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
-  test('documented route without a handler yet returns 404', async () => {
-    const res = await request(app).get('/api/stores/bookworm-main');
+  test('unknown resource on a documented route returns 404 JSON', async () => {
+    const res = await request(app).get('/api/stores/no-such-store');
     expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('NOT_FOUND');
   });
 
   test('invalid uuid path parameter returns 400 VALIDATION_ERROR (never 500)', async () => {
