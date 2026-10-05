@@ -448,7 +448,7 @@ Steps: OrdersPage (orderNumber, date, thumbnails, total, StatusBadge, Buy Again,
 🧪 Tests: `OrdersPage.test.jsx` — flags drive buttons.
 
 #### MT-32 — Wishlist page
-Status: [ ] · Depends: MT-31
+Status: [x] · Depends: MT-31
 Steps: grid of BookCards, remove, add to cart, EmptyState.
 ✅ Verify / 🧪 Tests: `WishlistPage.test.jsx` — list, remove, empty state.
 
