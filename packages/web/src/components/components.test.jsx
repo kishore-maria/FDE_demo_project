@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { useCartStore } from '../stores/useCartStore.js';
 import { cartResponse, joy, vanishing } from '../test/fixtures.js';
 import { API, server } from '../test/server.js';
-import { signIn, signOut } from '../test/utils.jsx';
+import { future, signIn, signOut } from '../test/utils.jsx';
 import AddressForm, { validateAddress } from './AddressForm.jsx';
 import BookCard from './BookCard.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
@@ -23,7 +23,7 @@ vi.mock('react-hot-toast', () => {
   return { default: toastFn, toast: toastFn, Toaster: () => null };
 });
 
-const withRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
+const withRouter = (ui) => render(<MemoryRouter future={future}>{ui}</MemoryRouter>);
 
 afterEach(signOut);
 

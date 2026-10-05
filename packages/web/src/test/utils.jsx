@@ -6,6 +6,8 @@ import { useCartStore } from '../stores/useCartStore.js';
 
 export { API } from './server.js';
 
+export const future = { v7_startTransition: true, v7_relativeSplatPath: true };
+
 export const users = {
   customer: { id: 'u-1', email: 'customer@test.com', firstName: 'John', lastName: 'Smith', role: 'CUSTOMER', giftPoints: 200 },
   admin: { id: 'u-2', email: 'admin@bookworm.com', firstName: 'Admin', lastName: 'BookWorm', role: 'ADMIN', giftPoints: 0 },
@@ -31,7 +33,7 @@ export function LocationProbe() {
 /** Renders the whole app at `path`. */
 export function renderApp(path = '/') {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[path]} future={future}>
       <AppRoutes />
       <LocationProbe />
     </MemoryRouter>,
@@ -41,7 +43,7 @@ export function renderApp(path = '/') {
 /** Renders a single element at `path` (optionally matched by `route`, e.g. "/books/:bookId"). */
 export function renderAt(element, { path = '/', route = '*' } = {}) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[path]} future={future}>
       <Routes>
         <Route path={route} element={element} />
         <Route path="*" element={null} />

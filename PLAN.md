@@ -412,7 +412,7 @@ Steps: LoadingSpinner, SkeletonCard, EmptyState, ConfirmDialog (Headless UI Dial
 🧪 Tests: BookCard (price ₹149, eBook "Instant download", add-to-cart calls store), ConfirmDialog, EmptyState, StarRating, StatusBadge, AddressForm validation.
 
 #### MT-26 — Login, Register, NotFound
-Status: [ ] · Depends: MT-25
+Status: [x] · Depends: MT-25
 Steps: forms per design theme; on success → store login → `syncAfterAuth()` → redirect param or `/`; field errors; 409 email in use message.
 ✅ Verify: customer login → home · wrong password toast · register mismatched passwords inline error · cart merge after login.
 🧪 Tests: `LoginPage.test.jsx`, `RegisterPage.test.jsx` with MSW.
