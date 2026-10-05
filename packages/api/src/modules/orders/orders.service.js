@@ -1,6 +1,7 @@
 import { isServiceablePin } from 'bookworm-shared';
 import { assertOrderAccess } from '../../lib/access.js';
 import { conflict, notFound, unprocessable } from '../../lib/errors.js';
+import { ORDER_TOKEN_TTL_SECONDS, signOrderToken } from '../../lib/jwt.js';
 import { prisma } from '../../lib/prisma.js';
 import { committedDeliveryDate, createShipment } from '../shipments/shipments.service.js';
 import { toAddressData } from '../users/addresses.serializer.js';
@@ -84,6 +85,33 @@ export async function lookupOrder({ email, orderNumber }) {
     items: order.items.map(serializeOrderItem),
     totals: serializeTotals(order),
     shipments: order.shipments.map(serializeShipment),
+  };
+}
+
+const lastFourDigits = (phone) => String(phone ?? '').replace(/\D/g, '').slice(-4);
+
+/**
+ * POST /orders/lookup/verify — a guest proves they own an order (email + order number + phone last 4)
+ * and gets a 30-minute token scoped to that order. Registered accounts must log in instead.
+ */
+export async function verifyOrderAccess({ email, orderNumber, phoneLast4 }, now = new Date()) {
+  const order = await prisma.order.findFirst({
+    where: {
+      orderNumber: orderNumber.toUpperCase(),
+      contactEmail: { equals: email.trim(), mode: 'insensitive' },
+    },
+    include: { ...orderInclude, user: { select: { id: true, email: true, role: true, giftPoints: true } } },
+  });
+  const phoneMatches = lastFourDigits(order?.shippingAddress?.phone) === phoneLast4;
+  if (!order || !phoneMatches) throw notFound('No order matches those details');
+  if (order.user.role !== 'GUEST') {
+    throw conflict('This order belongs to a BookWorm account. Log in to manage it.', 'ACCOUNT_ORDER');
+  }
+  return {
+    token: signOrderToken(order.user, order.id),
+    expiresAt: new Date(now.getTime() + ORDER_TOKEN_TTL_SECONDS * 1000),
+    order: serializeOrder(order, now),
+    giftPoints: order.user.giftPoints,
   };
 }
 

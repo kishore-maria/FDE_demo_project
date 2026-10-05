@@ -16,7 +16,7 @@ A dark-themed online bookstore where visitors browse and search the catalogue, b
 - **Mock payments** — credit/debit card, UPI, wallet; failure + retry; only the last 4 card digits are ever stored.
 - **Orders** — history, Buy Again, cancel within 48 h with refund, return within 7 days with a return shipment, change address before shipping, shipment timeline.
 - **PIN-based delivery dates** — "Deliver to" PIN in the navbar and on book pages, zone rules from the Bengaluru warehouse (same city 1 day … remote 6–8 days), 2 PM IST dispatch cutoff, weekends and national holidays skipped; the date is committed at payment.
-- **Guests** — buy with just an e-mail, track the order publicly, convert to a full account afterwards.
+- **Guests** — buy with just an e-mail, track the order publicly; later, verify with the phone's last 4 digits to change the address, cancel or return, and claim the account. Guests earn gift points on every order and redeem them once they create an account.
 - **My Writers** — followed authors, their new books and suggested writers (authors are auto-followed on purchase).
 - **Admin** — books (categories, primary genre, up-sell/cross-sell), categories, publishers, authors, coupons, store and policies, all orders with an "Advance shipment" simulator.
 

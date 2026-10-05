@@ -244,6 +244,11 @@ export default function CheckoutPage() {
                 <input type="checkbox" role="switch" checked={usePoints} onChange={(event) => setUsePoints(event.target.checked)} aria-label="Use gift points" />
               </label>
             )}
+            {isGuest && (
+              <p className="py-1.5 text-xs text-bw-muted" data-testid="guest-points-hint">
+                You&apos;ll earn gift points on this order. Create an account after paying to redeem them next time.
+              </p>
+            )}
           </OrderSummaryPanel>
         </div>
       </div>

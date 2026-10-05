@@ -56,6 +56,7 @@ const REQUIRED_OPERATIONS = [
   'POST /orders/{orderId}/return',
   'PATCH /orders/{orderId}/address',
   'POST /orders/lookup',
+  'POST /orders/lookup/verify',
   'POST /payments/initiate',
   'POST /payments/confirm',
   'GET /payments/wallet',
@@ -95,6 +96,7 @@ const PUBLIC_OPERATIONS = [
   'GET /books/bestsellers',
   'GET /books/new-launches',
   'POST /orders/lookup',
+  'POST /orders/lookup/verify',
   'POST /shipments/calculate-rate',
   'GET /stores/{slug}',
 ];

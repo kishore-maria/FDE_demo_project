@@ -5,4 +5,4 @@ import * as controller from './shipments.controller.js';
 export const shipmentsRouter = Router();
 
 shipmentsRouter.post('/calculate-rate', controller.calculateRate);
-shipmentsRouter.get('/order/:orderId', authenticate(), controller.listOrderShipments);
+shipmentsRouter.get('/order/:orderId', authenticate({ allowOrderScope: true }), controller.listOrderShipments);

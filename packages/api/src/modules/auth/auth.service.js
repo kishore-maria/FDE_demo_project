@@ -11,17 +11,27 @@ export const normalizeEmail = (email) => email.trim().toLowerCase();
 const emailInUse = () =>
   conflict('An account with this email already exists. Please log in instead.', 'EMAIL_IN_USE');
 
+const guestAccount = () =>
+  conflict(
+    "You've ordered as a guest with this email. Open Track Order and choose “Manage this order” to create your account — your orders and gift points come with it.",
+    'GUEST_ACCOUNT',
+  );
+
+const alreadyRegistered = () =>
+  badRequest('This account already has a password', undefined, 'ALREADY_REGISTERED');
+
 function authResponse(user, tokenOptions) {
   return { token: signToken(user, tokenOptions), user: serializeUser(user) };
 }
 
 /**
- * Creates a CUSTOMER account. Guest emails are also rejected: guests convert via set-password
- * from their own session, so registering can't be used to take over someone's guest orders.
+ * Creates a CUSTOMER account. Guest emails are also rejected (409 GUEST_ACCOUNT): guests claim the account
+ * via set-password after proving they own an order, so registering can't take over someone's guest orders.
  */
 export async function register({ email, password, firstName, lastName, phone }) {
   const normalized = normalizeEmail(email);
-  if (await prisma.user.findUnique({ where: { email: normalized } })) throw emailInUse();
+  const existing = await prisma.user.findUnique({ where: { email: normalized } });
+  if (existing) throw existing.role === 'GUEST' ? guestAccount() : emailInUse();
 
   try {
     const user = await prisma.user.create({
@@ -98,25 +108,29 @@ export async function updateProfile(userId, { firstName, lastName, phone }) {
 
 /**
  * PUT /auth/set-password — turns a guest into a CUSTOMER, keeping the same user id so every guest order
- * shows up in My Orders. Only allowed from a guest session that actually placed (paid for) an order.
+ * (and the gift points earned on them) shows up in the account. Requires proof of a paid order: either one
+ * placed in the current guest session, or the order behind an order-scoped token (Track Order → Manage).
  */
 export async function setPassword(authUser, { password, confirmPassword }) {
-  if (authUser.role !== 'GUEST') {
-    throw badRequest('This account already has a password', undefined, 'ALREADY_REGISTERED');
-  }
+  if (authUser.role !== 'GUEST') throw alreadyRegistered();
   if (password !== confirmPassword) {
     throw badRequest('Passwords do not match', { field: 'confirmPassword' }, 'PASSWORDS_DO_NOT_MATCH');
   }
 
+  const proof = authUser.orderId
+    ? { id: authUser.orderId }
+    : { guestSessionId: authUser.gsid ?? '' };
   const order = await prisma.order.findFirst({
-    where: { userId: authUser.id, guestSessionId: authUser.gsid ?? '', confirmedAt: { not: null } },
+    where: { userId: authUser.id, ...proof, confirmedAt: { not: null } },
     orderBy: { createdAt: 'desc' },
   });
   if (!order) throw forbidden('Place an order in this session before creating a password', 'NO_GUEST_ORDER');
 
   const current = await prisma.user.findUnique({ where: { id: authUser.id } });
-  const user = await prisma.user.update({
-    where: { id: authUser.id },
+  if (!current) throw unauthorized('Account no longer exists');
+  // The token may predate an earlier conversion; only ever set a password on a real GUEST row.
+  const { count } = await prisma.user.updateMany({
+    where: { id: authUser.id, role: 'GUEST' },
     data: {
       passwordHash: await hashPassword(password),
       role: 'CUSTOMER',
@@ -125,5 +139,6 @@ export async function setPassword(authUser, { password, confirmPassword }) {
       phone: current.phone ?? order.shippingAddress.phone ?? null,
     },
   });
-  return authResponse(user);
+  if (count === 0) throw alreadyRegistered();
+  return authResponse(await prisma.user.findUnique({ where: { id: authUser.id } }));
 }

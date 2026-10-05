@@ -36,9 +36,26 @@ sequenceDiagram
   G->>W: /track-order?orderNumber=…&email=…
   W->>A: POST /orders/lookup (no Authorization header, rate-limited)
   A-->>W: TrackedOrder (status, items, shipments — no address/payment)
+  opt Manage this order (any time later, any device)
+    G->>W: last 4 digits of the phone on the order
+    W->>A: POST /orders/lookup/verify {email, orderNumber, phoneLast4}
+    alt order belongs to a customer/admin
+      A-->>W: 409 ACCOUNT_ORDER → "log in to manage it"
+    else guest order, details match
+      A-->>W: 30 min token {role: GUEST, oid, scope: order} + full order + gift points waiting
+    end
+    G->>W: Change address / Cancel / Return
+    W->>A: PATCH address · POST cancel · POST return (Bearer order token)
+    G->>W: Create your account (password)
+    W->>A: PUT /auth/set-password (Bearer order token)
+    A->>DB: role GUEST → CUSTOMER (same user id, points kept)
+    A-->>W: 7 d customer JWT → /orders/{id}
+  end
 ```
 
-Guest rules: a guest token can only see orders and payments whose `guestSessionId` equals its `gsid`; guests cannot list orders, use the wallet, redeem points, review or follow.
+Guest rules: a guest token can only see orders and payments whose `guestSessionId` equals its `gsid`; an order-scoped token only reaches its own order (view, shipments, cancel, return, address) and set-password. Guests cannot list orders, use the wallet, redeem points, review or follow.
+
+Gift points: guests **earn** points on every paid order (stored on the guest user row, reversed on cancellation) and see them in the success overlay and Track Order → Manage. They can only **redeem** them after creating an account — a guest e-mail is unverified, so anyone typing it could otherwise spend the balance. Registering with a guest e-mail answers `409 GUEST_ACCOUNT` and points to Track Order, so the account is claimed by someone who can prove they own an order.
 
 ## 2. Checkout, payment and the stock reservation
 

@@ -27,6 +27,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [guestEmail, setGuestEmail] = useState(false);
 
   const update = (field) => (event) => {
     const value = field === 'phone' ? event.target.value.replace(/\D/g, '') : event.target.value;
@@ -41,6 +42,7 @@ export default function RegisterPage() {
     if (Object.keys(found).length) return;
 
     setSubmitting(true);
+    setGuestEmail(false);
     try {
       const user = await register({
         firstName: form.firstName.trim(),
@@ -54,6 +56,8 @@ export default function RegisterPage() {
     } catch (error) {
       if (errorCode(error) === 'EMAIL_IN_USE') {
         setErrors({ email: 'This e-mail is already registered. Please log in instead.' });
+      } else if (errorCode(error) === 'GUEST_ACCOUNT') {
+        setGuestEmail(true);
       } else {
         toast.error(errorMessage(error));
       }
@@ -68,6 +72,13 @@ export default function RegisterPage() {
     <section className="page flex justify-center">
       <div className="card w-full max-w-lg p-8">
         <h1 className="page-title">Register</h1>
+        {guestEmail && (
+          <p role="alert" className="mb-4 border border-bw-border bg-bw-bg-alt p-3 text-sm">
+            You&apos;ve ordered as a guest with this e-mail. Open{' '}
+            <Link to={`/track-order?email=${encodeURIComponent(form.email.trim())}`}>Track Order</Link>, find your order and
+            choose <strong>Manage this order</strong> to create your account — your orders and gift points come with it.
+          </p>
+        )}
         <form noValidate onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
           <TextField id="reg-first" label="First Name" autoComplete="given-name" value={form.firstName} onChange={update('firstName')} error={errors.firstName} />
           <TextField id="reg-last" label="Last Name" autoComplete="family-name" value={form.lastName} onChange={update('lastName')} error={errors.lastName} />

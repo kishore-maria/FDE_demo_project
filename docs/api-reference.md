@@ -27,7 +27,7 @@ Auth column: **public** · **any** (any valid token, guest included) · **regist
 | POST | `/auth/login` | public | `{ email, password }` |
 | POST | `/auth/guest-session` | public | `{ email }`; 409 `ACCOUNT_EXISTS` for registered emails |
 | GET/PUT | `/auth/profile` | any | name / phone |
-| PUT | `/auth/set-password` | guest | Converts a guest with a paid order in the current session into a customer |
+| PUT | `/auth/set-password` | guest / order token | Converts a guest with a paid order (current session, or the order verified via Track Order) into a customer; orders and gift points carry over |
 | GET/POST | `/users/me/addresses` | registered | First address becomes default |
 | PUT/DELETE | `/users/me/addresses/{id}` | registered | |
 | PUT | `/users/me/addresses/{id}/default` | registered | |
@@ -66,16 +66,19 @@ Auth column: **public** · **any** (any valid token, guest included) · **regist
 |---|---|---|---|
 | POST | `/orders/checkout` | any | `{ addressId \| address, saveAddress?, couponCode?, giftPointsToRedeem?, paymentMethod }` → PENDING order, stock reserved 30 min |
 | GET | `/orders` | registered | My orders (hides never-paid cancelled/expired) |
-| GET | `/orders/{id}` | owner | Includes `flags: { canCancel, canReturn, canModifyAddress }` |
-| POST | `/orders/{id}/cancel` | registered owner | ≤ 48 h, before shipping; refunds |
-| POST | `/orders/{id}/return` | registered owner | ≤ 7 days after delivery; creates a RETURN shipment |
-| PATCH | `/orders/{id}/address` | registered owner | Before shipping |
+| GET | `/orders/{id}` | owner ¹ | Includes `flags: { canCancel, canReturn, canModifyAddress }` |
+| POST | `/orders/{id}/cancel` | owner ¹ | ≤ 48 h, before shipping; refunds and takes back the points the order earned |
+| POST | `/orders/{id}/return` | owner ¹ | ≤ 7 days after delivery; creates a RETURN shipment |
+| PATCH | `/orders/{id}/address` | owner ¹ | Before shipping |
 | POST | `/orders/lookup` | public, rate-limited | `{ email, orderNumber }` → TrackedOrder (no address/payment) |
+| POST | `/orders/lookup/verify` | public, rate-limited | `{ email, orderNumber, phoneLast4 }` → `{ token, expiresAt, order, giftPoints }` — 30-min token for one guest order; `409 ACCOUNT_ORDER` for registered accounts |
 | POST | `/payments/initiate` | owner | `{ orderId, method }` → `sessionId`, payable amount |
 | POST | `/payments/confirm` | owner | `{ sessionId, card? \| upiId?, forceFailure? }` → `{ success, reason, order }` |
 | GET | `/payments/wallet` | registered | Gift points + wallet balance |
-| GET | `/shipments/order/{orderId}` | owner | |
+| GET | `/shipments/order/{orderId}` | owner ¹ | |
 | POST | `/shipments/calculate-rate` | public | `{ subtotalPaise, allDigital?, pin? }` → charge + PIN-based estimate (`serviceable`, `zone`, date range, dispatch cutoff) |
+
+¹ Registered owners; guests from the session that placed the order; or a guest holding the order-scoped token from `POST /orders/lookup/verify` (that order only). Order-scoped tokens also work for `PUT /auth/set-password` and are refused everywhere else with `403 ORDER_SCOPE_ONLY`.
 
 ### Admin (role ADMIN)
 
@@ -91,9 +94,12 @@ Auth column: **public** · **any** (any valid token, guest included) · **regist
 | 400 | `PASSWORDS_DO_NOT_MATCH`, `ALREADY_REGISTERED` | set-password |
 | 401 | `UNAUTHORIZED`, `TOKEN_EXPIRED`, `INVALID_CREDENTIALS` | Missing/invalid token, bad login |
 | 403 | `FORBIDDEN` | Wrong role / not the owner / guest on a registered-only route |
-| 403 | `NO_GUEST_ORDER` | set-password without a paid order in this guest session |
+| 403 | `NO_GUEST_ORDER` | set-password without a paid order (in this guest session, or the verified order) |
+| 403 | `ORDER_SCOPE_ONLY` | Order-scoped guest token used outside its order routes |
 | 404 | `NOT_FOUND`, `NOT_IN_CART`, `NOT_IN_WISHLIST`, `NOT_FOLLOWING` | |
 | 409 | `ACCOUNT_EXISTS`, `EMAIL_IN_USE` | Guest session / register with a registered email |
+| 409 | `GUEST_ACCOUNT` | Register with an e-mail used for guest orders — claim it via Track Order → Manage |
+| 409 | `ACCOUNT_ORDER` | Order verification for an order that belongs to a registered account |
 | 409 | `INSUFFICIENT_STOCK` | Cart or checkout above available stock |
 | 409 | `ORDER_NOT_PENDING`, `RESERVATION_EXPIRED`, `PAYMENT_ALREADY_PROCESSED` | Payment state |
 | 409 | `CANNOT_CANCEL`, `CANNOT_RETURN`, `CANNOT_MODIFY_ADDRESS` | Order windows / status |

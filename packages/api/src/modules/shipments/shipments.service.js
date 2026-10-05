@@ -85,11 +85,12 @@ export function calculateRate({ subtotalPaise, allDigital = false, pin = null },
   };
 }
 
-/** GET /shipments/order/:orderId — owner (or the guest session that placed it) only. */
+/** GET /shipments/order/:orderId — owner (or the guest session / order-scoped token for it) only. */
 export async function listOrderShipments(user, orderId) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     select: {
+      id: true,
       userId: true,
       guestSessionId: true,
       shipments: { include: eventsInclude, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }] },

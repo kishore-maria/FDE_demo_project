@@ -17,7 +17,7 @@ import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { couponsRouter } from './modules/coupons/coupons.routes.js';
-import { lookupOrder } from './modules/orders/orders.controller.js';
+import { lookupOrder, verifyOrderAccess } from './modules/orders/orders.controller.js';
 import { ordersRouter } from './modules/orders/orders.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
 import { shipmentsRouter } from './modules/shipments/shipments.routes.js';
@@ -124,6 +124,7 @@ export function createApp(options = {}) {
       next(new AppError(429, 'RATE_LIMITED', 'Too many requests, please try again later')),
   });
   api.post('/orders/lookup', lookupLimiter, lookupOrder);
+  api.post('/orders/lookup/verify', lookupLimiter, verifyOrderAccess);
   api.use('/orders', ordersRouter);
   api.use('/payments', paymentsRouter);
   api.use('/shipments', shipmentsRouter);

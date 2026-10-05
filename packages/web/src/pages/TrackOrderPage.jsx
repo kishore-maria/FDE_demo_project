@@ -7,6 +7,7 @@ import ShipmentTimeline from '../components/ShipmentTimeline.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import TextField from '../components/TextField.jsx';
 import { formatDate } from '../utils/format.js';
+import ManageOrder from './track/ManageOrder.jsx';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ORDER_NUMBER = /^BW-[0-9A-Z]{8}$/;
@@ -64,21 +65,22 @@ export default function TrackOrderPage() {
   const [params] = useSearchParams();
   const [values, setValues] = useState({ email: params.get('email') ?? '', orderNumber: params.get('orderNumber') ?? '' });
   const [errors, setErrors] = useState({});
-  const [status, setStatus] = useState({ loading: false, message: null, order: null });
+  const [status, setStatus] = useState({ loading: false, message: null, order: null, query: null });
   const autoSubmitted = useRef(false);
 
   const lookup = async (current) => {
     const found = validate(current);
     setErrors(found);
     if (Object.keys(found).length) return;
-    setStatus({ loading: true, message: null, order: null });
+    const query = { email: current.email.trim(), orderNumber: current.orderNumber.trim().toUpperCase() };
+    setStatus({ loading: true, message: null, order: null, query: null });
     try {
-      const order = await ordersApi.lookup(current.email.trim(), current.orderNumber.trim().toUpperCase());
-      setStatus({ loading: false, message: null, order });
+      const order = await ordersApi.lookup(query.email, query.orderNumber);
+      setStatus({ loading: false, message: null, order, query });
     } catch (err) {
       const code = err.response?.status;
       const message = code === 404 ? NOT_FOUND : code === 429 ? RATE_LIMITED : errorMessage(err);
-      setStatus({ loading: false, message, order: null });
+      setStatus({ loading: false, message, order: null, query: null });
     }
   };
 
@@ -129,6 +131,13 @@ export default function TrackOrderPage() {
       )}
 
       {status.order && <TrackedOrderCard order={status.order} />}
+      {status.order && (
+        <ManageOrder
+          email={status.query.email}
+          orderNumber={status.query.orderNumber}
+          onOrderChange={(order) => setStatus((current) => ({ ...current, order }))}
+        />
+      )}
 
       <p className="mt-8 text-sm text-bw-muted">
         Have an account?{' '}
