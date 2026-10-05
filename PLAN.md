@@ -362,7 +362,7 @@ Steps: payments module per Section 8; store only last4 / masked UPI; GET /paymen
 🧪 Tests: `payments.test.js` — each case; guest with other gsid → 403.
 
 #### MT-18 — Shipments: tracking, rate, events, simulator, returns
-Status: [ ] · Depends: MT-17
+Status: [x] · Depends: MT-17
 Steps: shipment service (createShipment FORWARD/RETURN, addEvent, advance), GET /shipments/order/:orderId (with events timeline), POST /shipments/calculate-rate, POST /admin/shipments/:id/advance (ADMIN) syncing order status (Section 8).
 ✅ Verify: tracking TRK-… · advance sequence to DELIVERED sets order DELIVERED · rate free ≥ ₹500, ₹49 below, eBook-only free · ETA skips weekends.
 🧪 Tests: `shipments.test.js` — rate cases, advance sequence, non-admin 403, events recorded.

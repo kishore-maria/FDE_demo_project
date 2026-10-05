@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
@@ -15,6 +16,7 @@ import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { couponsRouter } from './modules/coupons/coupons.routes.js';
 import { ordersRouter } from './modules/orders/orders.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
+import { shipmentsRouter } from './modules/shipments/shipments.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
 
@@ -88,6 +90,8 @@ export function createApp(options = {}) {
   api.use('/coupons', couponsRouter);
   api.use('/orders', ordersRouter);
   api.use('/payments', paymentsRouter);
+  api.use('/shipments', shipmentsRouter);
+  api.use('/admin', adminRouter);
   api.use(catalogRouter);
 
   app.use('/api', api);
