@@ -386,7 +386,7 @@ Steps: GET /stores/:slug (public, with policies); ADMIN CRUD for books (with cat
 🧪 Tests: `admin.test.js` — CRUD happy paths + 403 + 409.
 
 #### MT-22 — Contract reconciliation, Insomnia, PR #1
-Status: [ ] · Depends: MT-21
+Status: [x] · Depends: MT-21
 Steps: run full api suite with response validation on; fix spec/code drift; add examples; export Insomnia collection (environment base_url, token vars) to `docs/insomnia/bookworm.json`; push branch; open PR #1 "Implement BookWorm API".
 ✅ Verify: `npm test -w packages/api` green with response validation · spec:validate green · Insomnia collection imports and runs login → checkout → pay.
 🧪 Tests: none new; full suite must pass.

@@ -1,0 +1,273 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-10-05T00:00:00.000Z",
+  "__export_source": "bookworm.manual",
+  "resources": [
+    {
+      "_id": "wrk_bookworm",
+      "_type": "workspace",
+      "parentId": null,
+      "name": "BookWorm API",
+      "description": "Import into Insomnia (Application → Import). Run in order: Auth → Login, Cart → Add items, Checkout → Checkout → Initiate → Confirm. Tokens and ids are chained from earlier responses automatically.",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_bookworm",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3001/api",
+        "email": "customer@test.com",
+        "password": "Test@1234",
+        "admin_email": "admin@bookworm.com",
+        "admin_password": "Admin@1234",
+        "book_id": "3655c0fb-15c6-56a2-a40d-e0636592fb83",
+        "book2_id": "fa0f460c-ef26-5889-a4c3-8acdbdaafe8d",
+        "address_id": "8e8e8f42-3d3f-5745-a311-5df967b495cf",
+        "author_id": "c14cb7ef-1e26-5015-9242-0e9f9acb8704",
+        "token": "{% response 'body', 'req_login', 'b64::JC50b2tlbg==::46b', 'never', 60 %}",
+        "admin_token": "{% response 'body', 'req_admin_login', 'b64::JC50b2tlbg==::46b', 'never', 60 %}",
+        "guest_token": "{% response 'body', 'req_guest_session', 'b64::JC50b2tlbg==::46b', 'never', 60 %}",
+        "order_id": "{% response 'body', 'req_checkout', 'b64::JC5vcmRlci5pZA==::46b', 'never', 60 %}",
+        "session_id": "{% response 'body', 'req_pay_initiate', 'b64::JC5zZXNzaW9uSWQ=::46b', 'never', 60 %}",
+        "shipment_id": "{% response 'body', 'req_pay_confirm', 'b64::JC5vcmRlci5zaGlwbWVudHNbMF0uaWQ=::46b', 'never', 60 %}"
+      },
+      "dataPropertyOrder": null,
+      "color": null,
+      "isPrivate": false
+    },
+    { "_id": "fld_system", "_type": "request_group", "parentId": "wrk_bookworm", "name": "0 · System", "metaSortKey": 0 },
+    { "_id": "fld_auth", "_type": "request_group", "parentId": "wrk_bookworm", "name": "1 · Auth", "metaSortKey": 1 },
+    { "_id": "fld_catalog", "_type": "request_group", "parentId": "wrk_bookworm", "name": "2 · Catalog & Authors", "metaSortKey": 2 },
+    { "_id": "fld_cart", "_type": "request_group", "parentId": "wrk_bookworm", "name": "3 · Cart & Wishlist", "metaSortKey": 3 },
+    { "_id": "fld_checkout", "_type": "request_group", "parentId": "wrk_bookworm", "name": "4 · Checkout & Payments", "metaSortKey": 4 },
+    { "_id": "fld_orders", "_type": "request_group", "parentId": "wrk_bookworm", "name": "5 · Orders & Shipments", "metaSortKey": 5 },
+    { "_id": "fld_guest", "_type": "request_group", "parentId": "wrk_bookworm", "name": "6 · Guest", "metaSortKey": 6 },
+    { "_id": "fld_admin", "_type": "request_group", "parentId": "wrk_bookworm", "name": "7 · Admin", "metaSortKey": 7 },
+
+    { "_id": "req_health", "_type": "request", "parentId": "fld_system", "name": "Health", "method": "GET", "url": "{{ _.base_url }}/health", "metaSortKey": 0 },
+
+    {
+      "_id": "req_login", "_type": "request", "parentId": "fld_auth", "name": "Login (customer)", "method": "POST", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/auth/login",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"{{ _.email }}\",\n  \"password\": \"{{ _.password }}\"\n}" }
+    },
+    {
+      "_id": "req_admin_login", "_type": "request", "parentId": "fld_auth", "name": "Login (admin)", "method": "POST", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/auth/login",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"{{ _.admin_email }}\",\n  \"password\": \"{{ _.admin_password }}\"\n}" }
+    },
+    {
+      "_id": "req_register", "_type": "request", "parentId": "fld_auth", "name": "Register", "method": "POST", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/auth/register",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"new.reader@example.com\",\n  \"password\": \"Reader@123\",\n  \"firstName\": \"New\",\n  \"lastName\": \"Reader\"\n}" }
+    },
+    {
+      "_id": "req_profile", "_type": "request", "parentId": "fld_auth", "name": "Profile", "method": "GET", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/auth/profile",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_addresses", "_type": "request", "parentId": "fld_auth", "name": "My addresses", "method": "GET", "metaSortKey": 4,
+      "url": "{{ _.base_url }}/users/me/addresses",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+
+    { "_id": "req_categories", "_type": "request", "parentId": "fld_catalog", "name": "Categories", "method": "GET", "url": "{{ _.base_url }}/categories", "metaSortKey": 0 },
+    { "_id": "req_publishers", "_type": "request", "parentId": "fld_catalog", "name": "Publishers", "method": "GET", "url": "{{ _.base_url }}/publishers", "metaSortKey": 1 },
+    {
+      "_id": "req_books", "_type": "request", "parentId": "fld_catalog", "name": "Books (Self-help, price asc)", "method": "GET", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/books",
+      "parameters": [{ "name": "category", "value": "self-help" }, { "name": "sort", "value": "price_asc" }, { "name": "pageSize", "value": "12" }]
+    },
+    {
+      "_id": "req_search", "_type": "request", "parentId": "fld_catalog", "name": "Search books", "method": "GET", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/books",
+      "parameters": [{ "name": "search", "value": "minimalism" }]
+    },
+    {
+      "_id": "req_book", "_type": "request", "parentId": "fld_catalog", "name": "Book detail (Joy of Minimalism)", "method": "GET", "metaSortKey": 4,
+      "url": "{{ _.base_url }}/books/{{ _.book_id }}",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_review", "_type": "request", "parentId": "fld_catalog", "name": "Review a book", "method": "POST", "metaSortKey": 5,
+      "url": "{{ _.base_url }}/books/{{ _.book_id }}/reviews",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"rating\": 5,\n  \"comment\": \"A calm, practical guide. Loved it!\"\n}" }
+    },
+    {
+      "_id": "req_recommended", "_type": "request", "parentId": "fld_catalog", "name": "Recommended for you", "method": "GET", "metaSortKey": 6,
+      "url": "{{ _.base_url }}/books/recommended",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    { "_id": "req_bestsellers", "_type": "request", "parentId": "fld_catalog", "name": "Bestsellers", "method": "GET", "url": "{{ _.base_url }}/books/bestsellers", "metaSortKey": 7 },
+    { "_id": "req_new", "_type": "request", "parentId": "fld_catalog", "name": "New launches", "method": "GET", "url": "{{ _.base_url }}/books/new-launches", "metaSortKey": 8 },
+    {
+      "_id": "req_authors", "_type": "request", "parentId": "fld_catalog", "name": "Authors", "method": "GET", "metaSortKey": 9,
+      "url": "{{ _.base_url }}/authors",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_following", "_type": "request", "parentId": "fld_catalog", "name": "My writers", "method": "GET", "metaSortKey": 10,
+      "url": "{{ _.base_url }}/authors/following",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    { "_id": "req_store", "_type": "request", "parentId": "fld_catalog", "name": "Store + policies", "method": "GET", "url": "{{ _.base_url }}/stores/bookworm-main", "metaSortKey": 11 },
+
+    {
+      "_id": "req_cart", "_type": "request", "parentId": "fld_cart", "name": "Get cart", "method": "GET", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/cart",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_cart_add", "_type": "request", "parentId": "fld_cart", "name": "Add Joy of Minimalism", "method": "POST", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/cart/items",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"bookId\": \"{{ _.book_id }}\",\n  \"quantity\": 1\n}" }
+    },
+    {
+      "_id": "req_cart_add2", "_type": "request", "parentId": "fld_cart", "name": "Add The Path to Success", "method": "POST", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/cart/items",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"bookId\": \"{{ _.book2_id }}\",\n  \"quantity\": 1\n}" }
+    },
+    {
+      "_id": "req_cart_merge", "_type": "request", "parentId": "fld_cart", "name": "Merge browser cart", "method": "POST", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/cart/merge",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"items\": [{ \"bookId\": \"{{ _.book_id }}\", \"quantity\": 1 }]\n}" }
+    },
+    {
+      "_id": "req_wishlist", "_type": "request", "parentId": "fld_cart", "name": "Wishlist", "method": "GET", "metaSortKey": 4,
+      "url": "{{ _.base_url }}/wishlist",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+
+    {
+      "_id": "req_coupon", "_type": "request", "parentId": "fld_checkout", "name": "Validate BOOK10", "method": "POST", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/coupons/validate",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"code\": \"BOOK10\",\n  \"subtotalPaise\": 50800\n}" }
+    },
+    {
+      "_id": "req_checkout", "_type": "request", "parentId": "fld_checkout", "name": "Checkout (saved address + BOOK10)", "method": "POST", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/orders/checkout",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"addressId\": \"{{ _.address_id }}\",\n  \"couponCode\": \"BOOK10\",\n  \"giftPointsToRedeem\": 0,\n  \"paymentMethod\": \"CREDIT_CARD\"\n}" }
+    },
+    {
+      "_id": "req_pay_initiate", "_type": "request", "parentId": "fld_checkout", "name": "Payment: initiate", "method": "POST", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/payments/initiate",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"orderId\": \"{{ _.order_id }}\",\n  \"method\": \"CREDIT_CARD\"\n}" }
+    },
+    {
+      "_id": "req_pay_confirm", "_type": "request", "parentId": "fld_checkout", "name": "Payment: confirm (card)", "method": "POST", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/payments/confirm",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"sessionId\": \"{{ _.session_id }}\",\n  \"card\": {\n    \"number\": \"4242 4242 4242 4242\",\n    \"nameOnCard\": \"John Smith\",\n    \"expiry\": \"12/2030\",\n    \"cvv\": \"123\"\n  }\n}" }
+    },
+    {
+      "_id": "req_wallet", "_type": "request", "parentId": "fld_checkout", "name": "Wallet & gift points", "method": "GET", "metaSortKey": 4,
+      "url": "{{ _.base_url }}/payments/wallet",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_rate", "_type": "request", "parentId": "fld_checkout", "name": "Shipping rate", "method": "POST", "metaSortKey": 5,
+      "url": "{{ _.base_url }}/shipments/calculate-rate",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"subtotalPaise\": 30000\n}" }
+    },
+
+    {
+      "_id": "req_orders", "_type": "request", "parentId": "fld_orders", "name": "My orders", "method": "GET", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/orders",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_order", "_type": "request", "parentId": "fld_orders", "name": "Order detail", "method": "GET", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/orders/{{ _.order_id }}",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_tracking", "_type": "request", "parentId": "fld_orders", "name": "Shipments for order", "method": "GET", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/shipments/order/{{ _.order_id }}",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_cancel", "_type": "request", "parentId": "fld_orders", "name": "Cancel order", "method": "POST", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/orders/{{ _.order_id }}/cancel",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_buy_again", "_type": "request", "parentId": "fld_orders", "name": "Buy again", "method": "POST", "metaSortKey": 4,
+      "url": "{{ _.base_url }}/cart/buy-again/{{ _.order_id }}",
+      "authentication": { "type": "bearer", "token": "{{ _.token }}" }
+    },
+    {
+      "_id": "req_lookup", "_type": "request", "parentId": "fld_orders", "name": "Track order (public)", "method": "POST", "metaSortKey": 5,
+      "url": "{{ _.base_url }}/orders/lookup",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"customer@test.com\",\n  \"orderNumber\": \"BW-SEED000B\"\n}" }
+    },
+
+    {
+      "_id": "req_guest_session", "_type": "request", "parentId": "fld_guest", "name": "Start guest session", "method": "POST", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/auth/guest-session",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"guest.reader@example.com\"\n}" }
+    },
+    {
+      "_id": "req_guest_cart", "_type": "request", "parentId": "fld_guest", "name": "Guest: add to cart", "method": "POST", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/cart/items",
+      "authentication": { "type": "bearer", "token": "{{ _.guest_token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"bookId\": \"{{ _.book_id }}\",\n  \"quantity\": 1\n}" }
+    },
+    {
+      "_id": "req_guest_set_password", "_type": "request", "parentId": "fld_guest", "name": "Guest: create password (after paying)", "method": "PUT", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/auth/set-password",
+      "authentication": { "type": "bearer", "token": "{{ _.guest_token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"password\": \"Reader@123\",\n  \"confirmPassword\": \"Reader@123\"\n}" }
+    },
+
+    {
+      "_id": "req_admin_orders", "_type": "request", "parentId": "fld_admin", "name": "All orders (CONFIRMED)", "method": "GET", "metaSortKey": 0,
+      "url": "{{ _.base_url }}/admin/orders",
+      "parameters": [{ "name": "status", "value": "CONFIRMED" }],
+      "authentication": { "type": "bearer", "token": "{{ _.admin_token }}" }
+    },
+    {
+      "_id": "req_admin_advance", "_type": "request", "parentId": "fld_admin", "name": "Advance shipment", "method": "POST", "metaSortKey": 1,
+      "url": "{{ _.base_url }}/admin/shipments/{{ _.shipment_id }}/advance",
+      "authentication": { "type": "bearer", "token": "{{ _.admin_token }}" }
+    },
+    {
+      "_id": "req_admin_coupon", "_type": "request", "parentId": "fld_admin", "name": "Create coupon", "method": "POST", "metaSortKey": 2,
+      "url": "{{ _.base_url }}/admin/coupons",
+      "authentication": { "type": "bearer", "token": "{{ _.admin_token }}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"code\": \"FESTIVE15\",\n  \"discountType\": \"PERCENT\",\n  \"discountValue\": 15,\n  \"maxDiscountPaise\": 15000,\n  \"minOrderValuePaise\": 40000,\n  \"validUntil\": \"2027-12-31T23:59:59.000Z\"\n}" }
+    },
+    {
+      "_id": "req_admin_books", "_type": "request", "parentId": "fld_admin", "name": "Books (admin list)", "method": "GET", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/admin/books",
+      "authentication": { "type": "bearer", "token": "{{ _.admin_token }}" }
+    }
+  ]
+}
