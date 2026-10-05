@@ -453,7 +453,7 @@ Steps: grid of BookCards, remove, add to cart, EmptyState.
 ✅ Verify / 🧪 Tests: `WishlistPage.test.jsx` — list, remove, empty state.
 
 #### MT-33 — My Writers page
-Status: [ ] · Depends: MT-32
+Status: [x] · Depends: MT-32
 Steps: Your Writers (AuthorCard, unfollow with ConfirmDialog, optimistic), New from Your Writers (BookCards), Discover Writers (follow, optimistic); independent loading; EmptyState.
 ✅ Verify: customer sees Daniel Reed + 1 more · follow suggestion moves it to Your Writers.
 🧪 Tests: `MyWritersPage.test.jsx`, `AuthorCard.test.jsx`.
