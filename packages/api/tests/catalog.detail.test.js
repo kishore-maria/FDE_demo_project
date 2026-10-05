@@ -36,7 +36,7 @@ describe('GET /api/books/:bookId', () => {
       isFollowingAuthor: null,
     });
     expect(book.description.length).toBeGreaterThan(book.shortDescription.length);
-    expect(book.deliveryText).toMatch(/^Delivery by /);
+    expect(book.deliveryText).toBe('Usually delivered in 1–8 business days');
     expect(book.backCoverImageUrl).toContain('joy-of-minimalism-back');
     expect(book.author).toMatchObject({ name: 'Daniel Reed', slug: 'daniel-reed', bookCount: 4 });
     expect(book.author.bio).toBeTruthy();

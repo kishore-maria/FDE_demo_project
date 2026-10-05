@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import AppRoutes from '../router/AppRouter.jsx';
 import { useAuthStore } from '../stores/useAuthStore.js';
 import { useCartStore } from '../stores/useCartStore.js';
+import { useDeliveryStore } from '../stores/useDeliveryStore.js';
 
 export { API } from './server.js';
 
@@ -24,6 +25,7 @@ export function signOut() {
   cleanup();
   useAuthStore.setState({ user: null, token: null });
   useCartStore.setState({ mode: 'local', items: [], loading: false });
+  useDeliveryStore.setState({ pin: null, source: null });
 }
 
 /** Shows the current location so tests can assert redirects. */

@@ -1,9 +1,9 @@
 import {
-  DELIVERY_BUSINESS_DAYS,
   DELIVERY_CHARGE_PAISE,
+  DELIVERY_ZONES,
   FREE_DELIVERY_THRESHOLD_PAISE,
   addBusinessDays,
-  formatDeliveryDate,
+  estimateDelivery,
   formatINR,
   generateTrackingNumber,
 } from 'bookworm-shared';
@@ -32,13 +32,21 @@ const RETURN_NOTES = {
 
 export const shipmentNote = (type, status) => (type === 'RETURN' ? RETURN_NOTES : FORWARD_NOTES)[status];
 
+/** Latest promised delivery date for a PIN; unknown PINs (legacy data) fall back to the slowest national estimate. */
+export function committedDeliveryDate(pin, now = new Date()) {
+  return estimateDelivery({ pin, now }).latest ?? addBusinessDays(now, DELIVERY_ZONES.NATIONAL.maxDays);
+}
+
 /**
  * Creates a shipment with its first tracking event. eBook-only forward shipments are delivered
- * instantly (digital download), everything else starts in PROCESSING.
+ * instantly (digital download); everything else starts in PROCESSING with a PIN-based estimate.
  */
-export async function createShipment(tx, { orderId, type = 'FORWARD', shippingRatePaise = 0, digitalOnly = false, now = new Date() }) {
+export async function createShipment(
+  tx,
+  { orderId, type = 'FORWARD', shippingRatePaise = 0, digitalOnly = false, pin = null, now = new Date() },
+) {
   const instant = type === 'FORWARD' && digitalOnly;
-  const estimatedDelivery = instant ? now : addBusinessDays(now, DELIVERY_BUSINESS_DAYS);
+  const estimatedDelivery = instant ? now : committedDeliveryDate(pin, now);
   const events = [{ status: 'PROCESSING', note: shipmentNote(type, 'PROCESSING'), occurredAt: now }];
   if (instant) {
     events.push({ status: 'DELIVERED', note: 'Available for instant download', occurredAt: new Date(now.getTime() + 1) });
@@ -59,17 +67,21 @@ export async function createShipment(tx, { orderId, type = 'FORWARD', shippingRa
   });
 }
 
-/** POST /shipments/calculate-rate — same rules as computeOrderTotals' delivery charge. */
-export function calculateRate({ subtotalPaise, allDigital = false }, now = new Date()) {
+/** POST /shipments/calculate-rate — same charge rules as computeOrderTotals, plus the PIN-based estimate. */
+export function calculateRate({ subtotalPaise, allDigital = false, pin = null }, now = new Date()) {
   const free = allDigital || subtotalPaise >= FREE_DELIVERY_THRESHOLD_PAISE;
   const shippingRatePaise = free ? 0 : DELIVERY_CHARGE_PAISE;
-  const estimatedDelivery = allDigital ? now : addBusinessDays(now, DELIVERY_BUSINESS_DAYS);
+  const estimate = estimateDelivery({ pin, digital: allDigital, now });
   return {
     shippingRatePaise,
     shippingRateInr: formatINR(shippingRatePaise),
     freeShippingEligible: free,
-    estimatedDelivery,
-    estimatedDeliveryText: allDigital ? 'Instant download' : formatDeliveryDate(estimatedDelivery),
+    serviceable: estimate.serviceable,
+    zone: estimate.zone,
+    estimatedDeliveryEarliest: estimate.earliest,
+    estimatedDelivery: estimate.latest,
+    estimatedDeliveryText: estimate.text,
+    dispatchCutoffAt: estimate.cutoffAt,
   };
 }
 

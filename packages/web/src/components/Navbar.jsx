@@ -2,6 +2,8 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { selectIsAdmin, selectIsRegistered, useAuthStore } from '../stores/useAuthStore.js';
 import { selectItemCount, useCartStore } from '../stores/useCartStore.js';
+import { useDeliveryStore } from '../stores/useDeliveryStore.js';
+import DeliverTo from './DeliverTo.jsx';
 import { CartIcon, GridIcon, UserIcon } from './icons.jsx';
 
 const navClass = ({ isActive }) =>
@@ -19,6 +21,8 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     resetCart();
+    // A PIN taken from the account's address shouldn't outlive the session; a typed one may.
+    if (useDeliveryStore.getState().source === 'address') useDeliveryStore.getState().clear();
     navigate('/');
   };
 
@@ -50,6 +54,7 @@ export default function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
+          <DeliverTo />
           <Link
             to="/checkout"
             className="relative p-2 text-white hover:bg-bw-surface"

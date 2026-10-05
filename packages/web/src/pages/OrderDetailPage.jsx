@@ -16,6 +16,7 @@ import NotFoundPage from './NotFoundPage.jsx';
 import OrderActions from './orders/OrderActions.jsx';
 
 const METHOD_LABELS = { CREDIT_CARD: 'Credit card', DEBIT_CARD: 'Debit card', UPI: 'UPI', WALLET: 'BookWorm wallet' };
+const DELIVERED_STATUSES = ['DELIVERED', 'RETURN_REQUESTED', 'RETURNED'];
 
 function paymentDetails(payment) {
   if (payment.cardLast4) return `•••• ${payment.cardLast4}`;
@@ -112,7 +113,11 @@ export default function OrderDetailPage() {
                       {item.format && `${formatLabel(item.format)} · `}
                       {item.quantity} × {item.priceAtPurchaseInr}
                     </p>
-                    {item.deliveryDate && <p className="text-xs text-bw-success">Delivered on {formatDate(item.deliveryDate)}</p>}
+                    {item.deliveryDate && (
+                      <p className="text-xs text-bw-success">
+                        {DELIVERED_STATUSES.includes(order.status) ? 'Delivered on' : 'Arriving by'} {formatDate(item.deliveryDate)}
+                      </p>
+                    )}
                   </div>
                   <span className="font-semibold">{item.lineTotalInr}</span>
                 </li>

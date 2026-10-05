@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { errorMessage } from '../../api/client.js';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
+import { DeliveryText } from '../../components/DeliveryEstimate.jsx';
 import { TrashIcon } from '../../components/icons.jsx';
 import { useCartStore } from '../../stores/useCartStore.js';
 import { formatLabel } from '../../utils/format.js';
@@ -34,7 +35,7 @@ function CartLine({ item, onRemove }) {
         <p className="text-xs text-bw-muted">
           by {book.author.name} · {formatLabel(book.format)}
         </p>
-        <p className="text-xs text-bw-success">{book.deliveryText}</p>
+        <DeliveryText format={book.format} fallback={book.deliveryText} />
         <div className="mt-auto flex items-center gap-2">
           <button type="button" className="btn-secondary h-8 w-8 p-0" onClick={() => (quantity > 1 ? change(quantity - 1) : onRemove(book))} disabled={busy} aria-label={`Decrease quantity of ${book.title}`}>
             −

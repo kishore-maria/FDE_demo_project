@@ -115,7 +115,43 @@ sequenceDiagram
 
 The server computes `flags { canCancel, canReturn, canModifyAddress }` for every order; the web app only shows the buttons the flags allow, and the API re-checks on every request.
 
-## 4. Recommendations
+## 4. Delivery estimates (PIN zones)
+
+Delivery dates depend on the destination PIN; no courier API is involved. The rules live in `bookworm-shared` (`estimateDelivery`), so the web preview and the server's committed date always agree.
+
+| Destination (warehouse 560001, Bengaluru) | Rule | Business days |
+|---|---|---|
+| Same city | first 3 digits `560` | 1 |
+| Same state | Karnataka circle `56`–`59` | 2 |
+| Same region | first digit `5` | 3 |
+| Metro | Delhi 110, Mumbai 400, Kolkata 700, Chennai 600, Hyderabad 500, Pune 411, Ahmedabad 380 | 3 |
+| Rest of India | anything else | 4–5 (shown as a range) |
+| Remote | North-East 78/79, J&K/Ladakh 18/19, Andaman 744, Lakshadweep 68255 | 6–8 (range) |
+| Not serviceable | starts with 0 or 9 (APO), not 6 digits | refused |
+
+- **Calendar:** IST, Monday–Friday, skipping national holidays (26 Jan, 15 Aug, 2 Oct, 25 Dec; add festival dates in `delivery.js`).
+- **Cutoff:** orders paid before **2 PM IST** on a business day dispatch the same day; later ones dispatch the next business day. The UI shows "Order within 2 h 15 m to ship today".
+
+```mermaid
+sequenceDiagram
+  actor S as Shopper
+  participant W as Web
+  participant A as API
+  S->>W: navbar "Deliver to" or book page "Check" (PIN 560001)
+  W->>W: estimateDelivery(pin) → "Delivery by Tue, 6 Oct" on cards & book page
+  Note over W: Registered users default to their default address PIN
+  S->>W: checkout address PIN (live preview, Pay Now blocked if not serviceable)
+  W->>A: POST /orders/checkout
+  A->>A: 422 PIN_NOT_SERVICEABLE unless the PIN is serviceable (printed books)
+  W->>A: POST /payments/confirm
+  A->>A: shipment.estimatedDelivery = latest date for the PIN at payment time
+  S->>W: change address before shipping
+  W->>A: PATCH /orders/{id}/address → date re-estimated for the new PIN
+```
+
+Without a PIN, catalogue responses say "Usually delivered in 1–8 business days" — no firm date is promised until the PIN is known.
+
+## 5. Recommendations
 
 ```mermaid
 flowchart TD

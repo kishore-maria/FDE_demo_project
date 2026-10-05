@@ -1,9 +1,10 @@
-import { ORDER_RESERVATION_MINUTES, computeOrderTotals, generateOrderNumber } from 'bookworm-shared';
+import { ORDER_RESERVATION_MINUTES, computeOrderTotals, generateOrderNumber, isServiceablePin } from 'bookworm-shared';
 import { badRequest, conflict, notFound, unprocessable } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import { checkCoupon } from '../coupons/coupons.service.js';
 import { toAddressData } from '../users/addresses.serializer.js';
 import { orderInclude, serializeOrder } from './orders.serializer.js';
+import { pinNotServiceable } from './orders.service.js';
 import { releaseReservation } from './reservations.js';
 
 const MINUTE_MS = 60 * 1000;
@@ -77,6 +78,8 @@ export async function checkout(authUser, body, now = new Date()) {
     if (cart.length === 0) throw unprocessable('Your cart is empty', 'CART_EMPTY');
 
     const shippingAddress = await resolveAddress(tx, user, body);
+    const hasPrintedBooks = cart.some(({ book }) => book.format !== 'EBOOK');
+    if (hasPrintedBooks && !isServiceablePin(shippingAddress.pin)) throw pinNotServiceable(shippingAddress.pin);
 
     const pricedItems = cart.map(({ book, quantity }) => ({ pricePaise: book.pricePaise, quantity, format: book.format }));
     const subtotalPaise = pricedItems.reduce((sum, item) => sum + item.pricePaise * item.quantity, 0);

@@ -7,6 +7,7 @@ import { errorMessage } from '../api/client.js';
 import { wishlistApi } from '../api/wishlist.js';
 import { BookGrid } from '../components/BookCard.jsx';
 import Breadcrumb from '../components/Breadcrumb.jsx';
+import { DeliveryCheck } from '../components/DeliveryEstimate.jsx';
 import { HeartIcon } from '../components/icons.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import StarRating from '../components/StarRating.jsx';
@@ -162,7 +163,7 @@ export default function BookDetailPage() {
                 ))}
               </p>
               <p className="mt-2 text-3xl font-semibold">{book.priceInr}</p>
-              <p className="text-sm text-bw-success">{book.inStock ? book.deliveryText : 'Currently out of stock'}</p>
+              {book.inStock ? <DeliveryCheck format={book.format} /> : <p className="text-sm text-bw-success">Currently out of stock</p>}
               <div className="mt-3 flex flex-wrap gap-3">
                 <button type="button" className="btn-primary" onClick={handleAddToCart} disabled={!book.inStock || busy === 'cart'}>
                   Add to Cart

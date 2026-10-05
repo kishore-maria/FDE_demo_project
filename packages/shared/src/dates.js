@@ -1,7 +1,4 @@
-import { DELIVERY_BUSINESS_DAYS } from './constants.js';
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+import { estimateDelivery, formatShortDate } from './delivery.js';
 
 /** Adds n business days (Mon–Fri), skipping weekends. Returns a new Date. */
 export function addBusinessDays(date, n) {
@@ -15,13 +12,12 @@ export function addBusinessDays(date, n) {
   return result;
 }
 
-/** "Delivery by Mon, 21 Jul" */
+/** "Delivery by Mon, 21 Jul" (IST calendar date). */
 export function formatDeliveryDate(date) {
-  return `Delivery by ${WEEKDAYS[date.getDay()]}, ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+  return `Delivery by ${formatShortDate(date)}`;
 }
 
-/** Delivery text for a book format: eBooks are delivered instantly. */
-export function getDeliveryText(format, fromDate = new Date()) {
-  if (format === 'EBOOK') return 'Instant download';
-  return formatDeliveryDate(addBusinessDays(fromDate, DELIVERY_BUSINESS_DAYS));
+/** Delivery text for a book format; without a PIN print books get the generic range. */
+export function getDeliveryText(format, fromDate = new Date(), pin = null) {
+  return estimateDelivery({ pin, digital: format === 'EBOOK', now: fromDate }).text;
 }

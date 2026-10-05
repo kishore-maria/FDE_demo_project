@@ -35,8 +35,12 @@ describe('delivery text', () => {
     expect(getDeliveryText('EBOOK')).toBe('Instant download');
   });
 
-  test('print books use 3 business days', () => {
-    expect(getDeliveryText('PAPERBACK', new Date(2025, 0, 3))).toBe('Delivery by Wed, 8 Jan');
+  test('print books without a PIN get the generic range', () => {
+    expect(getDeliveryText('PAPERBACK', new Date(2025, 0, 3))).toBe('Usually delivered in 1–8 business days');
+  });
+
+  test('print books with a PIN get a dated estimate', () => {
+    expect(getDeliveryText('PAPERBACK', new Date('2026-10-05T04:30:00Z'), '560001')).toBe('Delivery by Tue, 6 Oct');
   });
 });
 

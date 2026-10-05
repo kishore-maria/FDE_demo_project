@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { estimateDelivery } from 'bookworm-shared';
 import { http, HttpResponse } from 'msw';
 import toast from 'react-hot-toast';
 import { afterEach, describe, expect, test, vi } from 'vitest';
@@ -173,6 +174,35 @@ describe('CheckoutPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Pay Now' }));
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Only 1 copies of "The Path to Success" are available'));
     await waitFor(() => expect(cartFetches).toBeGreaterThan(before));
+  });
+
+  test('delivery preview follows the PIN; unserviceable PINs block Pay Now', async () => {
+    signedInCustomer();
+    let checkouts = 0;
+    server.use(http.post(`${API}/orders/checkout`, () => {
+      checkouts += 1;
+      return HttpResponse.json({ order: pendingOrder() }, { status: 201 });
+    }));
+    const user = userEvent.setup();
+    renderApp('/checkout');
+    const delivery = () => screen.getByRole('region', { name: 'Estimated delivery' });
+
+    await waitFor(() => expect(screen.getByLabelText('Pin')).toHaveValue('560001'));
+    expect(delivery()).toHaveTextContent(estimateDelivery({ pin: '560001' }).text);
+    expect(delivery()).toHaveTextContent('(Same city)');
+
+    const pin = screen.getByLabelText('Pin');
+    await user.clear(pin);
+    expect(delivery()).toHaveTextContent('Enter your PIN to see the delivery date');
+    await user.type(pin, '781001');
+    expect(delivery()).toHaveTextContent(estimateDelivery({ pin: '781001' }).text);
+    expect(delivery()).toHaveTextContent('(Remote area)');
+
+    await user.clear(pin);
+    await user.type(pin, '999001');
+    expect(within(delivery()).getByRole('alert')).toHaveTextContent("Sorry, we don't deliver to PIN 999001 yet");
+    expect(screen.getByRole('button', { name: 'Pay Now' })).toBeDisabled();
+    expect(checkouts).toBe(0);
   });
 
   test('removing an item asks for confirmation', async () => {
