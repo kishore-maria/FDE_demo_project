@@ -1,11 +1,12 @@
-import { formatINR } from 'bookworm-shared';
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './router/AppRouter.jsx';
 
-// Placeholder until the app shell is built in MT-23.
+export const ROUTER_FUTURE = { v7_startTransition: true, v7_relativeSplatPath: true };
+
 export default function App() {
   return (
-    <main style={{ fontFamily: 'sans-serif', padding: '2rem' }}>
-      <h1>Book Worm</h1>
-      <p>Shared package check: Joy of Minimalism costs {formatINR(14900)}</p>
-    </main>
+    <BrowserRouter future={ROUTER_FUTURE}>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }

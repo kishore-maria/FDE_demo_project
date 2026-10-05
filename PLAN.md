@@ -394,78 +394,78 @@ Steps: run full api suite with response validation on; fix spec/code drift; add 
 ### PHASE E — Web (branch feature/web-implementation, from main after PR #1)
 
 #### MT-23 — Web shell, theme, routing, layout
-Status: [ ] · Depends: MT-22
+Status: [x] · Depends: MT-22
 Steps: Tailwind 3 config with `bw-*` tokens (Section 10), base CSS; AppRouter: public `/`, `/books/:id`, `/authors/:id`, `/checkout`, `/cart`→`/checkout`, `/login`, `/register`, `/track-order`; registered `/orders`, `/orders/:id`, `/wishlist`, `/writers`; admin `/admin/*`; `*` → NotFound. `RequireRegistered`, `RequireAdmin` guards (redirect `/login?redirect=`). AppLayout with Navbar + Toaster. Placeholder pages. Vitest jsdom + MSW setup.
 ✅ Verify: anonymous can open `/`, `/books/:id`, `/checkout`, `/track-order` · `/orders` redirects to login · unknown path → 404 · theme visible.
 🧪 Tests: `router.test.jsx` — public vs guarded routes.
 
 #### MT-24 — API client + stores
-Status: [ ] · Depends: MT-23
+Status: [x] · Depends: MT-23
 Steps: `api/client.js` (baseURL, Bearer injection, 401 policy: registered → logout + redirect login; guest → clear token + toast "Session expired, enter email again"; optional-auth public GETs retried without token); `useAuthStore` (persist key `bookworm-auth`; user, token; isAuthenticated, isGuest, isRegistered, isAdmin; login, logout, setGuestSession); `useCartStore` (mode local|server; local persisted items; actions call API in server mode; `syncAfterAuth()` posts merge then switches to server; itemCount, subtotal via shared).
 ✅ Verify: anonymous add → localStorage; login → merge → server cart contains items, local cleared · reload keeps session · 401 behaviours.
 🧪 Tests: `useCartStore.test.js` (local add/update/remove, totals, merge call with MSW), `client.test.js` (header injection, 401 policies).
 
 #### MT-25 — Shared components
-Status: [ ] · Depends: MT-24
+Status: [x] · Depends: MT-24
 Steps: LoadingSpinner, SkeletonCard, EmptyState, ConfirmDialog (Headless UI Dialog), StatusBadge (all statuses), StarRating (interactive/read-only), BookCard (design layout, hover/focus Add to Cart, compact variant), AuthorCard, Breadcrumb, OrderSummaryPanel, AddressForm (validation pin 6 digits, phone 10 digits), ShipmentTimeline; PropTypes on all; `/dev/components` (DEV only).
 ✅ Verify: showcase renders all · keyboard focus shows Add to Cart.
 🧪 Tests: BookCard (price ₹149, eBook "Instant download", add-to-cart calls store), ConfirmDialog, EmptyState, StarRating, StatusBadge, AddressForm validation.
 
 #### MT-26 — Login, Register, NotFound
-Status: [ ] · Depends: MT-25
+Status: [x] · Depends: MT-25
 Steps: forms per design theme; on success → store login → `syncAfterAuth()` → redirect param or `/`; field errors; 409 email in use message.
 ✅ Verify: customer login → home · wrong password toast · register mismatched passwords inline error · cart merge after login.
 🧪 Tests: `LoginPage.test.jsx`, `RegisterPage.test.jsx` with MSW.
 
 #### MT-27 — Home / Catalogue page
-Status: [ ] · Depends: MT-26
+Status: [x] · Depends: MT-26
 Steps: GenreSidebar (All + 19 + Publishers), FilterBar (Search debounced, Language, Format, Price Range buckets ₹0–200/200–400/400–600/600+, Sort), sections vs results grid, active filter chips, pagination, URL sync via `useSearchParams`, skeletons, EmptyState.
 ✅ Verify: anonymous home shows 3 sections matching design books · logged-in customer "Recommended" shows personalised · selecting Self-help shows grid + URL `?category=self-help` · refresh keeps filters · publisher link filters.
 🧪 Tests: `HomePage.test.jsx` — sections render, filter switches to grid, URL params applied.
 
 #### MT-28 — Book detail page
-Status: [ ] · Depends: MT-27
+Status: [x] · Depends: MT-27
 Steps: Section 10 layout; wishlist toggle (anonymous/guest → login redirect); follow author; review form (registered) with 0/100 counter; related, cross-sell, up-sell; invalid id → NotFound.
 ✅ Verify: Joy of Minimalism page matches design · Add to Cart updates badge · review appears after submit.
 🧪 Tests: `BookDetailPage.test.jsx` — renders data, review counter limit, wishlist toggle.
 
 #### MT-29 — Cart + Checkout page
-Status: [ ] · Depends: MT-28
+Status: [x] · Depends: MT-28
 Steps: Section 10 layout; guest gate → guest-session (409 → "Account exists, please login") → `syncAfterAuth()`; editable qty/remove with ConfirmDialog; AddressForm + Use Saved Address + Save address; coupon apply via /coupons/validate; gift points toggle (registered with points); preview totals via shared `computeOrderTotals`; Pay Now → POST /orders/checkout → open PaymentModal with server totals; EmptyState when cart empty.
 ✅ Verify: design cart (Joy of Minimalism + Path to Success) shows Price ₹508.00, Delivery Free, BOOK10 discount ₹100 · guest gate works · registered saved address prefill · insufficient stock message.
 🧪 Tests: `CheckoutPage.test.jsx` — guest gate, coupon apply, totals, validation errors.
 
 #### MT-30 — Payment modal + success overlay
-Status: [ ] · Depends: MT-29
+Status: [x] · Depends: MT-29
 Steps: PaymentModal (tabs, card formatting/masking, UPI, Wallet balance with insufficient state, DEV simulate failure, spinner, error + retry, reservation-expired message → back to checkout); PaymentSuccessOverlay (design + guest order number, track link, conversion form → set-password → store login → toast; Skip).
 ✅ Verify: registered pay → success → cart badge 0 · guest pay → order number + track link + conversion works · failure then retry succeeds.
 🧪 Tests: `PaymentModal.test.jsx` (tabs, payload has no CVV persisted beyond request, failure + retry), `PaymentSuccessOverlay.test.jsx` (guest vs registered content).
 
 #### MT-31 — Orders list + detail
-Status: [ ] · Depends: MT-30
+Status: [x] · Depends: MT-30
 Steps: OrdersPage (orderNumber, date, thumbnails, total, StatusBadge, Buy Again, Cancel per canCancel with ConfirmDialog); OrderDetailPage (items, address, payment, ShipmentTimeline, Return per canReturn, Change address per canModifyAddress).
 ✅ Verify: seeded orders visible · Buy Again → cart · cancel fresh order · return Order B.
 🧪 Tests: `OrdersPage.test.jsx` — flags drive buttons.
 
 #### MT-32 — Wishlist page
-Status: [ ] · Depends: MT-31
+Status: [x] · Depends: MT-31
 Steps: grid of BookCards, remove, add to cart, EmptyState.
 ✅ Verify / 🧪 Tests: `WishlistPage.test.jsx` — list, remove, empty state.
 
 #### MT-33 — My Writers page
-Status: [ ] · Depends: MT-32
+Status: [x] · Depends: MT-32
 Steps: Your Writers (AuthorCard, unfollow with ConfirmDialog, optimistic), New from Your Writers (BookCards), Discover Writers (follow, optimistic); independent loading; EmptyState.
 ✅ Verify: customer sees Daniel Reed + 1 more · follow suggestion moves it to Your Writers.
 🧪 Tests: `MyWritersPage.test.jsx`, `AuthorCard.test.jsx`.
 
 #### MT-34 — Track Order page
-Status: [ ] · Depends: MT-33
+Status: [x] · Depends: MT-33
 Steps: public form (email + order number BW-…), prefill from `?orderNumber=&email=`, POST /orders/lookup without auth header, result card (status, items, timeline, ETA), not-found message, 429 message, login link.
 ✅ Verify: guest order found · wrong details message.
 🧪 Tests: `TrackOrderPage.test.jsx`.
 
 #### MT-35 — Admin pages + PR #2
-Status: [ ] · Depends: MT-34
+Status: [x] · Depends: MT-34
 Steps: `/admin` layout; tables + forms for books (categories multi-select, relations), categories, publishers, authors, coupons, store + policies; orders list with "Advance shipment" button. Push; PR #2 "Implement BookWorm web app" with screenshots.
 ✅ Verify: admin creates book visible on home grid · advance shipment updates customer order detail · customer cannot open /admin.
 🧪 Tests: `AdminBooks.test.jsx` — create form validation; guard redirect.
