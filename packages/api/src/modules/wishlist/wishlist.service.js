@@ -34,6 +34,7 @@ export async function addToWishlist(userId, bookId) {
   return serializeItem(item);
 }
 
+/** DELETE /wishlist/:bookId — returns the remaining wishlist; 404 NOT_IN_WISHLIST when absent. */
 export async function removeFromWishlist(userId, bookId) {
   const { count } = await prisma.wishlistItem.deleteMany({ where: { userId, bookId } });
   if (count === 0) throw notFound('This book is not in your wishlist', 'NOT_IN_WISHLIST');

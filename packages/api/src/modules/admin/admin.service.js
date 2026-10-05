@@ -29,6 +29,7 @@ async function mustExist(model, id, label) {
 
 // ─── Books ───────────────────────────────────────────────────────────────────
 
+/** GET /admin/books — paginated books, optionally filtered by `search` (title or author). */
 export async function listBooks(query) {
   const { page, pageSize, skip, take } = pageOf(query);
   const search = query.search?.trim();
@@ -81,6 +82,7 @@ function bookData(input) {
 const categoryRows = (categories) =>
   categories.map(({ categoryId, isPrimary = false }) => ({ categoryId, isPrimary }));
 
+/** POST /admin/books — validates references, creates the book with categories/relations, returns BookDetail. */
 export async function createBook(input) {
   await assertBookReferences(input);
   const book = await prisma.book.create({
@@ -94,6 +96,7 @@ export async function createBook(input) {
   return getBookDetail(book.id, null);
 }
 
+/** PUT /admin/books/:id — partial update; `categories`/`relations`, when given, replace the existing rows. */
 export async function updateBook(bookId, input) {
   await mustExist('book', bookId, 'Book');
   await assertBookReferences(input, bookId);
@@ -111,6 +114,7 @@ export async function updateBook(bookId, input) {
   return getBookDetail(bookId, null);
 }
 
+/** DELETE /admin/books/:id — 409 BOOK_HAS_ORDERS when the book was ever ordered. */
 export async function deleteBook(bookId) {
   await mustExist('book', bookId, 'Book');
   if (await prisma.orderItem.count({ where: { bookId } })) {
@@ -121,6 +125,7 @@ export async function deleteBook(bookId) {
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 
+/** GET /admin/categories — flat list (parents first) with book counts. */
 export async function listCategories() {
   const categories = await prisma.category.findMany({
     include: { _count: { select: { books: true } } },
@@ -145,12 +150,14 @@ const categoryData = ({ name, slug, parentId, displayOrder, showInSidebar }) => 
   ...(showInSidebar !== undefined && { showInSidebar }),
 });
 
+/** POST /admin/categories — categories are at most two levels deep. */
 export async function createCategory(input) {
   await assertParent(input.parentId);
   const category = await prisma.category.create({ data: categoryData(input) });
   return serializeCategory(category, 0);
 }
 
+/** PUT /admin/categories/:id — a parent with children cannot become a child (409 CATEGORY_HAS_CHILDREN). */
 export async function updateCategory(categoryId, input) {
   await mustExist('category', categoryId, 'Category');
   await assertParent(input.parentId, categoryId);
@@ -165,6 +172,7 @@ export async function updateCategory(categoryId, input) {
   return serializeCategory(category, category._count.books);
 }
 
+/** DELETE /admin/categories/:id — 409 CATEGORY_IN_USE while it has books or sub-categories. */
 export async function deleteCategory(categoryId) {
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
@@ -181,6 +189,7 @@ export async function deleteCategory(categoryId) {
 
 const withBookCount = { _count: { select: { books: true } } };
 
+/** GET /admin/publishers — with book counts. */
 export async function listPublishers() {
   const publishers = await prisma.publisher.findMany({ include: withBookCount, orderBy: { name: 'asc' } });
   return { items: publishers.map(serializePublisher) };
@@ -193,10 +202,12 @@ const publisherData = ({ name, slug, description, logoUrl }) => ({
   logoUrl: logoUrl ?? null,
 });
 
+/** POST /admin/publishers */
 export async function createPublisher(input) {
   return serializePublisher(await prisma.publisher.create({ data: publisherData(input), include: withBookCount }));
 }
 
+/** PUT /admin/publishers/:id — omitted optional fields are cleared. */
 export async function updatePublisher(publisherId, input) {
   await mustExist('publisher', publisherId, 'Publisher');
   return serializePublisher(
@@ -204,6 +215,7 @@ export async function updatePublisher(publisherId, input) {
   );
 }
 
+/** DELETE /admin/publishers/:id — 409 PUBLISHER_IN_USE while it has books. */
 export async function deletePublisher(publisherId) {
   await mustExist('publisher', publisherId, 'Publisher');
   if (await prisma.book.count({ where: { publisherId } })) {
@@ -214,6 +226,7 @@ export async function deletePublisher(publisherId) {
 
 // ─── Authors ─────────────────────────────────────────────────────────────────
 
+/** GET /admin/authors — author cards with book counts and top category. */
 export async function listAuthors() {
   const authors = await prisma.author.findMany({ include: authorCardInclude, orderBy: { name: 'asc' } });
   return { items: authors.map((author) => serializeAuthor(author)) };
@@ -221,10 +234,12 @@ export async function listAuthors() {
 
 const authorData = ({ name, slug, bio, photoUrl }) => ({ name: name.trim(), slug, bio, photoUrl: photoUrl ?? null });
 
+/** POST /admin/authors */
 export async function createAuthor(input) {
   return serializeAuthor(await prisma.author.create({ data: authorData(input), include: authorCardInclude }));
 }
 
+/** PUT /admin/authors/:id — an omitted photoUrl is cleared. */
 export async function updateAuthor(authorId, input) {
   await mustExist('author', authorId, 'Author');
   return serializeAuthor(
@@ -232,6 +247,7 @@ export async function updateAuthor(authorId, input) {
   );
 }
 
+/** DELETE /admin/authors/:id — 409 AUTHOR_IN_USE while they have books. */
 export async function deleteAuthor(authorId) {
   await mustExist('author', authorId, 'Author');
   if (await prisma.book.count({ where: { authorId } })) throw conflict('This author still has books', 'AUTHOR_IN_USE');
@@ -269,15 +285,18 @@ function couponData(input) {
   };
 }
 
+/** GET /admin/coupons — all coupons, including inactive and expired ones. */
 export async function listCoupons() {
   const coupons = await prisma.coupon.findMany({ orderBy: { code: 'asc' } });
   return { items: coupons.map(serializeCoupon) };
 }
 
+/** POST /admin/coupons — FLAT values are paise, PERCENT values are whole percent (≤ 100). */
 export async function createCoupon(input) {
   return serializeCoupon(await prisma.coupon.create({ data: couponData(input) }));
 }
 
+/** PUT /admin/coupons/:id — full replacement of the coupon rules (usedCount is kept). */
 export async function updateCoupon(couponId, input) {
   await mustExist('coupon', couponId, 'Coupon');
   return serializeCoupon(await prisma.coupon.update({ where: { id: couponId }, data: couponData(input) }));
@@ -318,15 +337,18 @@ const storeData = ({ name, slug, description, isActive }) => ({
   ...(isActive !== undefined && { isActive }),
 });
 
+/** GET /admin/stores — with their policies. */
 export async function listStores() {
   const stores = await prisma.store.findMany({ include: policiesInclude, orderBy: { name: 'asc' } });
   return { items: stores.map(serializeStore) };
 }
 
+/** POST /admin/stores */
 export async function createStore(input) {
   return serializeStore(await prisma.store.create({ data: storeData(input), include: policiesInclude }));
 }
 
+/** PUT /admin/stores/:id */
 export async function updateStore(storeId, input) {
   await mustExist('store', storeId, 'Store');
   return serializeStore(await prisma.store.update({ where: { id: storeId }, data: storeData(input), include: policiesInclude }));
@@ -338,6 +360,7 @@ export async function deleteStore(storeId) {
   await prisma.store.delete({ where: { id: storeId } });
 }
 
+/** GET /admin/stores/:id/policies */
 export async function listPolicies(storeId) {
   await mustExist('store', storeId, 'Store');
   const policies = await prisma.storePolicy.findMany({ where: { storeId }, orderBy: { type: 'asc' } });
@@ -350,11 +373,13 @@ async function findPolicy(storeId, policyId) {
   return policy;
 }
 
+/** POST /admin/stores/:id/policies — one policy per type (duplicate type → 409 via the unique index). */
 export async function createPolicy(storeId, { type, title, content }) {
   await mustExist('store', storeId, 'Store');
   return serializePolicy(await prisma.storePolicy.create({ data: { storeId, type, title: title.trim(), content } }));
 }
 
+/** PUT /admin/stores/:id/policies/:policyId — the policy must belong to the store. */
 export async function updatePolicy(storeId, policyId, { type, title, content }) {
   await findPolicy(storeId, policyId);
   return serializePolicy(
@@ -362,6 +387,7 @@ export async function updatePolicy(storeId, policyId, { type, title, content }) 
   );
 }
 
+/** DELETE /admin/stores/:id/policies/:policyId */
 export async function deletePolicy(storeId, policyId) {
   await findPolicy(storeId, policyId);
   await prisma.storePolicy.delete({ where: { id: policyId } });
@@ -369,6 +395,7 @@ export async function deletePolicy(storeId, policyId) {
 
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
+/** GET /admin/orders — every customer's orders (newest first) with shipments, optionally by status. */
 export async function listOrders(query) {
   const { page, pageSize, skip, take } = pageOf(query);
   const where = query.status ? { status: query.status } : {};

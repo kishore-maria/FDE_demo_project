@@ -57,6 +57,7 @@ export async function listOrders(userId, query, now = new Date()) {
   };
 }
 
+/** GET /orders/:id — owner only; guests only for orders from their current guest session. */
 export async function getOrder(user, orderId, now = new Date()) {
   return serializeOrder(await loadAccessibleOrder(user, orderId), now);
 }

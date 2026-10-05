@@ -57,6 +57,7 @@ async function assertAuthorExists(authorId) {
   if (!author) throw notFound('Author not found');
 }
 
+/** GET /authors — every author; `isFollowing` is set when `user` is signed in. */
 export async function listAuthors(user) {
   const [authors, followedIds] = await Promise.all([
     prisma.author.findMany({ include: authorCardInclude, orderBy: [{ name: 'asc' }, { id: 'asc' }] }),
@@ -65,6 +66,7 @@ export async function listAuthors(user) {
   return { items: authors.map((author) => serializeAuthor(author, followedIds)) };
 }
 
+/** GET /authors/:id — profile plus all their books, newest first. */
 export async function getAuthor(authorId, user) {
   const [author, followedIds] = await Promise.all([
     prisma.author.findUnique({
@@ -137,6 +139,7 @@ export async function listSuggestions(userId) {
   return { items: ranked.map(({ author }) => serializeAuthor(author, notFollowed)) };
 }
 
+/** POST /authors/:id/follow — 409 ALREADY_FOLLOWING when already followed. */
 export async function followAuthor(userId, authorId) {
   await assertAuthorExists(authorId);
   const key = { userId_authorId: { userId, authorId } };
@@ -147,6 +150,7 @@ export async function followAuthor(userId, authorId) {
   return { authorId, isFollowing: true };
 }
 
+/** DELETE /authors/:id/follow — 404 NOT_FOLLOWING when not followed. */
 export async function unfollowAuthor(userId, authorId) {
   await assertAuthorExists(authorId);
   const { count } = await prisma.authorFollow.deleteMany({ where: { userId, authorId } });

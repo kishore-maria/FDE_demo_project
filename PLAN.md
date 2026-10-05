@@ -473,13 +473,13 @@ Steps: `/admin` layout; tables + forms for books (categories multi-select, relat
 ### PHASE F — Delivery (branch feature/deployment-docs)
 
 #### MT-36 — Docker & deployment readiness
-Status: [ ] · Depends: MT-35
+Status: [x] · Depends: MT-35
 Steps: `packages/api/Dockerfile` (build context = repo root; node:20-alpine; npm ci for api+shared workspaces; prisma generate; non-root user; entrypoint: `prisma migrate deploy`, seed when SEED_ON_START=true, `node server.js`); `packages/web/Dockerfile` (build arg VITE_API_URL=/api; nginx:alpine; `nginx.conf` with `try_files $uri /index.html` and `location /api/ { proxy_pass http://api:3001; }`); compose: postgres (healthcheck), api (`depends_on: service_healthy`, environment DATABASE_URL host `postgres`, TRUST_PROXY=1, SEED_ON_START=true, CORS_ORIGIN http://localhost:5173), web (port 5173:80); root `.dockerignore`.
 ✅ Verify: `docker compose up --build` clean · http://localhost:5173 loads, deep-link refresh works · /api/health via nginx · data persists across restart · seed idempotent on restart.
 🧪 Tests: manual checklist; `npm test` still green.
 
 #### MT-37 — Documentation, README, final PR
-Status: [ ] · Depends: MT-36
+Status: [x] · Depends: MT-36
 Steps: README (overview, screenshots, quick start, demo accounts, coupons, scripts, Swagger, Insomnia import, **workflow-slide → Node mapping table**, docs link); `docs/` 7 files (architecture with Mermaid diagram, data-model with ER diagram, api-reference, frontend-components, data-flows: guest flow, checkout/payment/reservation, cancel/return/refund, recommendations; developer-guide with common errors; demo-script); JSDoc on service functions; coverage `vitest --coverage` > 70% api + web; PR #3.
 ✅ Verify: fresh clone → follow developer-guide → running in < 10 min · coverage threshold met · all PRs merged.
 

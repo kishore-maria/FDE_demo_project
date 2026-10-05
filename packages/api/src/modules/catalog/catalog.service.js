@@ -149,6 +149,7 @@ export async function listCategoryTree() {
   );
 }
 
+/** GET /publishers — alphabetical, with book counts (sidebar filter). */
 export async function listPublishers() {
   const publishers = await prisma.publisher.findMany({
     orderBy: { name: 'asc' },
@@ -157,6 +158,7 @@ export async function listPublishers() {
   return publishers.map(serializePublisher);
 }
 
+/** GET /publishers/:id */
 export async function getPublisher(publisherId) {
   const publisher = await prisma.publisher.findUnique({
     where: { id: publisherId },

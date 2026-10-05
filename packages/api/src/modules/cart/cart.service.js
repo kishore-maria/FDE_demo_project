@@ -93,6 +93,7 @@ async function addLines(userId, lines) {
 
 export const getCart = (userId) => loadCart(userId);
 
+/** POST /cart/items — adds to any existing quantity; 409 INSUFFICIENT_STOCK above available stock. */
 export async function addItem(userId, { bookId, quantity = 1 }) {
   const book = await findBook(bookId);
   const existing = await prisma.cartItem.findUnique({ where: { userId_bookId: { userId, bookId } } });
@@ -107,6 +108,7 @@ export async function addItem(userId, { bookId, quantity = 1 }) {
   return loadCart(userId);
 }
 
+/** PUT /cart/items/:bookId — sets the quantity (0 removes the line). */
 export async function updateItem(userId, bookId, quantity) {
   const book = await findBook(bookId);
   if (quantity === 0) {
@@ -123,12 +125,14 @@ export async function updateItem(userId, bookId, quantity) {
   return loadCart(userId);
 }
 
+/** DELETE /cart/items/:bookId — 404 NOT_IN_CART when the book isn't in the cart. */
 export async function removeItem(userId, bookId) {
   const { count } = await prisma.cartItem.deleteMany({ where: { userId, bookId } });
   if (count === 0) throw notFound('This book is not in your cart', 'NOT_IN_CART');
   return loadCart(userId);
 }
 
+/** DELETE /cart — empties the cart. */
 export async function clearCart(userId) {
   await prisma.cartItem.deleteMany({ where: { userId } });
   return loadCart(userId);

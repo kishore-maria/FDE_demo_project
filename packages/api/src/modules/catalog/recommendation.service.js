@@ -89,6 +89,7 @@ export async function getRecommendations(user) {
   return { source: 'personalised', items: serializeAll(books) };
 }
 
+/** GET /books/bestsellers — highest salesCount first. */
 export async function getBestsellers() {
   const books = await prisma.book.findMany({
     include: bookSummaryInclude,
@@ -98,6 +99,7 @@ export async function getBestsellers() {
   return { items: serializeAll(books) };
 }
 
+/** GET /books/new-launches — most recently published first. */
 export async function getNewLaunches() {
   const books = await prisma.book.findMany({
     include: bookSummaryInclude,
