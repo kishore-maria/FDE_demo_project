@@ -368,7 +368,7 @@ Steps: shipment service (createShipment FORWARD/RETURN, addEvent, advance), GET 
 🧪 Tests: `shipments.test.js` — rate cases, advance sequence, non-admin 403, events recorded.
 
 #### MT-19 — Orders: history, detail, cancel/refund, return, modify address
-Status: [ ] · Depends: MT-18
+Status: [x] · Depends: MT-18
 Steps: GET /orders (paginated, newest first, thumbnails, flags), GET /orders/:id (items, address snapshot, payment method + last4, shipments + events, flags), cancel (Section 8 refunds), return (creates RETURN shipment; RETURNED + refund when advanced to DELIVERED), PATCH address.
 ✅ Verify: customer sees 2 seeded orders · Order A canCancel false, canReturn false (30 days) · Order B canReturn true · fresh order cancel → stock restored, points reversed, coupon usedCount −1, payment REFUNDED, wallet refunded if WALLET · cancel after SHIPPED → 409 · other user's order → 404.
 🧪 Tests: `orders.test.js` — each rule; time-based checks using orders with backdated createdAt via Prisma.

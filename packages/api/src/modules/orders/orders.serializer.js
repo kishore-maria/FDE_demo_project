@@ -24,10 +24,15 @@ export function orderFlags(order, now = new Date()) {
   const forwardNotShipped = !forward || forward.status === 'PROCESSING';
   const withinCancelWindow = now - order.createdAt <= CANCEL_WINDOW_HOURS * HOUR_MS;
   const deliveredAt = forward?.actualDelivery;
+  const hasPhysicalItems = order.items.some((item) => item.book.format !== 'EBOOK');
 
   return {
     canCancel: ['PENDING', 'CONFIRMED'].includes(order.status) && forwardNotShipped && withinCancelWindow,
-    canReturn: order.status === 'DELIVERED' && Boolean(deliveredAt) && now - deliveredAt <= RETURN_WINDOW_DAYS * DAY_MS,
+    canReturn:
+      order.status === 'DELIVERED' &&
+      hasPhysicalItems &&
+      Boolean(deliveredAt) &&
+      now - deliveredAt <= RETURN_WINDOW_DAYS * DAY_MS,
     canModifyAddress: order.status === 'CONFIRMED' && forward?.status === 'PROCESSING',
   };
 }
