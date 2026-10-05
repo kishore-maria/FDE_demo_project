@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-bw-bg font-sans text-white antialiased;
+  }
+
+  a {
+    @apply text-bw-link hover:underline;
+  }
+
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-bw-accent;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-bw-accent text-white hover:bg-bw-accent-hover;
+  }
+
+  .btn-secondary {
+    @apply btn border border-bw-border bg-bw-surface text-white hover:bg-bw-surface-hover;
+  }
+
+  .btn-danger {
+    @apply btn bg-bw-danger text-white hover:brightness-110;
+  }
+
+  .btn-ghost {
+    @apply btn text-bw-link hover:bg-bw-surface;
+  }
+
+  .input {
+    @apply w-full border-b border-bw-subtle bg-bw-surface px-3 py-2 text-sm text-white placeholder:text-bw-subtle focus:border-bw-accent focus:outline-none;
+  }
+
+  .label {
+    @apply mb-1 block text-xs text-bw-muted;
+  }
+
+  .card {
+    @apply border border-bw-border bg-bw-bg-alt;
+  }
+
+  .page {
+    @apply mx-auto w-full max-w-content px-4 py-6;
+  }
+
+  .page-title {
+    @apply mb-4 text-2xl font-semibold;
+  }
+}

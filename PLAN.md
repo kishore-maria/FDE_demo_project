@@ -394,7 +394,7 @@ Steps: run full api suite with response validation on; fix spec/code drift; add 
 ### PHASE E — Web (branch feature/web-implementation, from main after PR #1)
 
 #### MT-23 — Web shell, theme, routing, layout
-Status: [ ] · Depends: MT-22
+Status: [x] · Depends: MT-22
 Steps: Tailwind 3 config with `bw-*` tokens (Section 10), base CSS; AppRouter: public `/`, `/books/:id`, `/authors/:id`, `/checkout`, `/cart`→`/checkout`, `/login`, `/register`, `/track-order`; registered `/orders`, `/orders/:id`, `/wishlist`, `/writers`; admin `/admin/*`; `*` → NotFound. `RequireRegistered`, `RequireAdmin` guards (redirect `/login?redirect=`). AppLayout with Navbar + Toaster. Placeholder pages. Vitest jsdom + MSW setup.
 ✅ Verify: anonymous can open `/`, `/books/:id`, `/checkout`, `/track-order` · `/orders` redirects to login · unknown path → 404 · theme visible.
 🧪 Tests: `router.test.jsx` — public vs guarded routes.
