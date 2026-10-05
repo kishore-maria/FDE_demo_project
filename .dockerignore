@@ -3,7 +3,14 @@
 **/coverage
 **/.env
 **/.env.test
+**/*.log
 .git
 .github
+.vscode
 docs
+docker
 *.md
+packages/*/tests
+packages/web/src/test
+packages/web/src/**/*.test.jsx
+packages/web/src/**/*.test.js

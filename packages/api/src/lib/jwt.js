@@ -33,4 +33,5 @@ export function verifyToken(token) {
   return jwt.verify(token, secret(), { algorithms: [ALGORITHM] });
 }
 
-export { TokenExpiredError } from 'jsonwebtoken';
+// jsonwebtoken is CommonJS; Node 20 can't statically detect this named export, so re-export via the default.
+export const { TokenExpiredError } = jwt;
