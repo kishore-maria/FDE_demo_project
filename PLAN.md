@@ -424,7 +424,7 @@ Steps: GenreSidebar (All + 19 + Publishers), FilterBar (Search debounced, Langua
 🧪 Tests: `HomePage.test.jsx` — sections render, filter switches to grid, URL params applied.
 
 #### MT-28 — Book detail page
-Status: [ ] · Depends: MT-27
+Status: [x] · Depends: MT-27
 Steps: Section 10 layout; wishlist toggle (anonymous/guest → login redirect); follow author; review form (registered) with 0/100 counter; related, cross-sell, up-sell; invalid id → NotFound.
 ✅ Verify: Joy of Minimalism page matches design · Add to Cart updates badge · review appears after submit.
 🧪 Tests: `BookDetailPage.test.jsx` — renders data, review counter limit, wishlist toggle.

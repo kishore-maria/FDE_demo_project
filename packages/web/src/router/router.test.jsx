@@ -1,5 +1,8 @@
 import { screen } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { afterEach, describe, expect, test } from 'vitest';
+import { joyDetail } from '../test/fixtures.js';
+import { API, server } from '../test/server.js';
 import { renderApp, signIn, signOut } from '../test/utils.jsx';
 
 afterEach(signOut);
@@ -7,7 +10,6 @@ afterEach(signOut);
 describe('AppRoutes', () => {
   test.each([
     ['/', 'Catalogue'],
-    ['/books/3655c0fb-15c6-56a2-a40d-e0636592fb83', 'Book details'],
     ['/checkout', 'Checkout'],
     ['/track-order', 'Track Order'],
     ['/login', 'Login'],
@@ -15,6 +17,12 @@ describe('AppRoutes', () => {
   ])('anonymous visitors can open %s', (path, heading) => {
     renderApp(path);
     expect(screen.getByRole('heading', { level: 1, name: heading })).toBeInTheDocument();
+  });
+
+  test('anonymous visitors can open a book page', async () => {
+    server.use(http.get(`${API}/books/:bookId`, () => HttpResponse.json(joyDetail)));
+    renderApp(`/books/${joyDetail.id}`);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Joy of Minimalism' })).toBeInTheDocument();
   });
 
   test('/cart redirects to /checkout', () => {

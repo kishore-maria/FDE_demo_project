@@ -48,6 +48,30 @@ export const vanishing = {
   deliveryText: 'Instant download',
 };
 
+/** GET /books/:id response for Joy of Minimalism. */
+export const joyDetail = {
+  ...joy,
+  description: 'A gentle, practical guide to owning less and living more.',
+  isbn: '978-0-00-000001-1',
+  backCoverImageUrl: 'https://picsum.photos/seed/joy-of-minimalism-back/400/600',
+  publishedAt: '2026-09-20T00:00:00.000Z',
+  stockQuantity: 100,
+  isEditorsPick: false,
+  author: { ...joy.author, bio: 'Daniel Reed writes about simple living.', bookCount: 4 },
+  breadcrumb: [
+    { id: 'cat-non-fiction', name: 'Non-Fiction', slug: 'non-fiction' },
+    { id: 'cat-self-help', name: 'Self-help', slug: 'self-help' },
+  ],
+  reviews: [
+    { id: 'r-1', rating: 5, comment: 'A calm, practical guide. Loved it!', createdAt: '2026-09-29T10:00:00.000Z', reviewer: { firstName: 'Priya' } },
+  ],
+  relatedBooks: [path],
+  upsell: [{ ...joy, id: 'joy-hc', slug: 'joy-of-minimalism-hardcover', title: "Joy of Minimalism (Collector's Hardcover)", format: 'HARDCOVER', priceInr: '₹349', pricePaise: 34900 }],
+  crossSell: [{ ...joy, id: 'focus-reset', slug: 'the-focus-reset', title: 'The Focus Reset', priceInr: '₹249', pricePaise: 24900 }],
+  isWishlisted: null,
+  isFollowingAuthor: null,
+};
+
 /** API Cart response for the given [book, quantity] lines. */
 export function cartResponse(lines) {
   const items = lines.map(([book, quantity]) => ({
