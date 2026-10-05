@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import toast from 'react-hot-toast';
@@ -74,5 +74,18 @@ describe('RegisterPage', () => {
     await fill(valid);
     expect(await screen.findByText('This e-mail is already registered. Please log in instead.')).toBeInTheDocument();
     expect(useAuthStore.getState().token).toBeNull();
+  });
+
+  test('409 guest account points to Track Order to claim it', async () => {
+    server.use(
+      http.post(`${API}/auth/register`, () =>
+        HttpResponse.json({ error: { code: 'GUEST_ACCOUNT', message: 'Use Track Order' } }, { status: 409 }),
+      ),
+    );
+    renderApp('/register');
+    await fill(valid);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent("You've ordered as a guest with this e-mail");
+    expect(within(alert).getByRole('link', { name: 'Track Order' })).toHaveAttribute('href', '/track-order?email=asha%40example.com');
   });
 });

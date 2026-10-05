@@ -28,6 +28,20 @@ export function signToken(user, { gsid } = {}) {
   });
 }
 
+export const ORDER_TOKEN_TTL_SECONDS = 30 * 60;
+
+/**
+ * Signs a short-lived token that lets a verified guest manage ONE order (Track Order → Manage).
+ * Claims: sub (guest user id), email, role GUEST, oid (order id), scope 'order'.
+ */
+export function signOrderToken(user, orderId) {
+  return jwt.sign({ email: user.email, role: 'GUEST', oid: orderId, scope: 'order' }, secret(), {
+    algorithm: ALGORITHM,
+    subject: user.id,
+    expiresIn: ORDER_TOKEN_TTL_SECONDS,
+  });
+}
+
 /** Verifies a token; throws jsonwebtoken errors (TokenExpiredError, JsonWebTokenError). */
 export function verifyToken(token) {
   return jwt.verify(token, secret(), { algorithms: [ALGORITHM] });

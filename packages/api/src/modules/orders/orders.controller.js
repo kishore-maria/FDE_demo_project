@@ -17,6 +17,10 @@ export async function lookupOrder(req, res) {
   res.json(await orders.lookupOrder(req.body));
 }
 
+export async function verifyOrderAccess(req, res) {
+  res.json(await orders.verifyOrderAccess(req.body));
+}
+
 export async function cancelOrder(req, res) {
   res.json(await orders.cancelOrder(req.user, req.params.orderId));
 }

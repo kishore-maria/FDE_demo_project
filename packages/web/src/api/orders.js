@@ -16,4 +16,18 @@ export const ordersApi = {
   updateAddress: (orderId, address) => api.patch(`/orders/${orderId}/address`, address).then(data),
   buyAgain: (orderId) => api.post(`/cart/buy-again/${orderId}`).then(data),
   lookup: (email, orderNumber) => api.post('/orders/lookup', { email, orderNumber }, { skipAuth: true }).then(data),
+  verifyAccess: (email, orderNumber, phoneLast4) =>
+    api.post('/orders/lookup/verify', { email, orderNumber, phoneLast4 }, { skipAuth: true }).then(data),
 };
+
+/** Sends an explicit token instead of the session one (skipAuth also keeps a 401 from ending the session). */
+export const withToken = (token) => ({ skipAuth: true, headers: { Authorization: `Bearer ${token}` } });
+
+/** Order actions for a guest holding an order-scoped token from Track Order → Manage. */
+export function orderAccessApi(token) {
+  return {
+    cancel: (orderId) => api.post(`/orders/${orderId}/cancel`, undefined, withToken(token)).then(data),
+    requestReturn: (orderId) => api.post(`/orders/${orderId}/return`, undefined, withToken(token)).then(data),
+    updateAddress: (orderId, address) => api.patch(`/orders/${orderId}/address`, address, withToken(token)).then(data),
+  };
+}

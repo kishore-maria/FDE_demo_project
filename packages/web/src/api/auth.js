@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/useAuthStore.js';
 import { useCartStore } from '../stores/useCartStore.js';
 import { api } from './client.js';
+import { withToken } from './orders.js';
 
 /** Stores the session from an AuthResponse and merges the browser cart into the server cart. */
 export async function startSession(authResponse) {
@@ -37,6 +38,13 @@ export async function startGuestSession(email) {
 export async function setPassword(password, confirmPassword) {
   const { data } = await api.put('/auth/set-password', { password, confirmPassword });
   useAuthStore.getState().login(data);
+  return data.user;
+}
+
+/** Track Order → Manage: claims the guest account with the order-scoped token and signs in. */
+export async function claimGuestAccount(orderToken, password, confirmPassword) {
+  const { data } = await api.put('/auth/set-password', { password, confirmPassword }, withToken(orderToken));
+  await startSession(data);
   return data.user;
 }
 

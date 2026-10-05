@@ -13,7 +13,7 @@ const CONFIRMS = {
     message: (order) => `Order ${order.orderNumber} will be cancelled and ${order.totals.totalInr} refunded to your original payment method.`,
     confirmLabel: 'Cancel order',
     cancelLabel: 'Keep order',
-    run: (order) => ordersApi.cancel(order.id),
+    run: (order, client) => client.cancel(order.id),
     done: 'Order cancelled. Your refund is on its way.',
   },
   return: {
@@ -22,13 +22,16 @@ const CONFIRMS = {
       `We'll schedule a pickup for order ${order.orderNumber}. You'll be refunded once the books reach us.`,
     confirmLabel: 'Request return',
     cancelLabel: 'Not now',
-    run: (order) => ordersApi.requestReturn(order.id),
+    run: (order, client) => client.requestReturn(order.id),
     done: 'Return requested. A pickup has been scheduled.',
   },
 };
 
-/** Buy Again plus the Cancel / Return buttons allowed by `order.flags`. `onUpdated` receives the updated order. */
-export default function OrderActions({ order, onUpdated }) {
+/**
+ * Buy Again plus the Cancel / Return buttons allowed by `order.flags`. `onUpdated` receives the updated order.
+ * `client` overrides the cancel/return calls (guests managing an order from Track Order use an order token).
+ */
+export default function OrderActions({ order, onUpdated, client = ordersApi, showBuyAgain = true }) {
   const navigate = useNavigate();
   const setCart = useCartStore((state) => state.setFromServer);
   const [confirming, setConfirming] = useState(null);
@@ -53,7 +56,7 @@ export default function OrderActions({ order, onUpdated }) {
     const action = CONFIRMS[confirming];
     setBusy(confirming);
     try {
-      const updated = await action.run(order);
+      const updated = await action.run(order, client);
       toast.success(action.done);
       onUpdated(updated);
       setConfirming(null);
@@ -68,9 +71,11 @@ export default function OrderActions({ order, onUpdated }) {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button type="button" className="btn-primary" onClick={buyAgain} disabled={busy !== null}>
-        {busy === 'buyAgain' ? 'Adding…' : 'Buy Again'}
-      </button>
+      {showBuyAgain && (
+        <button type="button" className="btn-primary" onClick={buyAgain} disabled={busy !== null}>
+          {busy === 'buyAgain' ? 'Adding…' : 'Buy Again'}
+        </button>
+      )}
       {order.flags.canCancel && (
         <button type="button" className="btn-danger" onClick={() => setConfirming('cancel')} disabled={busy !== null}>
           Cancel Order
@@ -104,4 +109,6 @@ OrderActions.propTypes = {
     flags: PropTypes.shape({ canCancel: PropTypes.bool, canReturn: PropTypes.bool }).isRequired,
   }).isRequired,
   onUpdated: PropTypes.func.isRequired,
+  client: PropTypes.shape({ cancel: PropTypes.func.isRequired, requestReturn: PropTypes.func.isRequired }),
+  showBuyAgain: PropTypes.bool,
 };

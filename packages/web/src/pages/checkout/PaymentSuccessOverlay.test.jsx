@@ -84,4 +84,18 @@ describe('PaymentSuccessOverlay', () => {
     expect(screen.queryByRole('form', { name: 'Create a password' })).not.toBeInTheDocument();
     expect(useAuthStore.getState().user.role).toBe('GUEST');
   });
+
+  test('shows the gift points earned; guests are told to create an account to redeem them', () => {
+    const withPoints = { ...order, totals: { giftPointsEarned: 28 } };
+    signIn('guest');
+    renderAt(<PaymentSuccessOverlay order={withPoints} isGuest onClose={() => {}} />);
+    expect(screen.getByTestId('points-earned')).toHaveTextContent(
+      'You earned 28 gift points (worth ₹28) on this order. Create an account to redeem them on your next order.',
+    );
+    signOut();
+
+    signIn('customer');
+    renderAt(<PaymentSuccessOverlay order={withPoints} isGuest={false} onClose={() => {}} />);
+    expect(screen.getByTestId('points-earned')).not.toHaveTextContent('Create an account');
+  });
 });

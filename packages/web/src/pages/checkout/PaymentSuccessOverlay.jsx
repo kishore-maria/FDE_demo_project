@@ -75,6 +75,7 @@ ConvertAccount.propTypes = { onDone: PropTypes.func.isRequired };
 export default function PaymentSuccessOverlay({ order, isGuest, onClose }) {
   const navigate = useNavigate();
   const [showConvert, setShowConvert] = useState(isGuest);
+  const pointsEarned = order.totals?.giftPointsEarned ?? 0;
   const trackLink = `/track-order?orderNumber=${encodeURIComponent(order.orderNumber)}&email=${encodeURIComponent(order.contactEmail)}`;
   const continueShopping = () => {
     onClose();
@@ -104,6 +105,12 @@ export default function PaymentSuccessOverlay({ order, isGuest, onClose }) {
             ))}
           </ul>
 
+          {pointsEarned > 0 && (
+            <p className="mt-4 text-sm" data-testid="points-earned">
+              You earned <strong>{pointsEarned} gift points</strong> (worth ₹{pointsEarned}) on this order.
+              {isGuest && ' Create an account to redeem them on your next order.'}
+            </p>
+          )}
           {isGuest && (
             <div className="mt-6 space-y-2">
               <div className="mx-auto inline-block border border-bw-border bg-bw-bg-alt px-6 py-3">

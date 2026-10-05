@@ -78,6 +78,9 @@ paths:
       tags: [Auth]
       operationId: register
       summary: Register a customer account
+      description: |
+        `409 EMAIL_IN_USE` for registered e-mails. E-mails used only for guest orders answer `409 GUEST_ACCOUNT`:
+        the guest claims the account through Track Order (`POST /orders/lookup/verify` + `PUT /auth/set-password`).
       security: []
       requestBody:
         required: true
@@ -172,8 +175,9 @@ paths:
       operationId: setPassword
       summary: Convert a guest into a registered customer
       description: |
-        Guest token required. Only allowed when the guest placed at least one order in the current guest session.
-        Keeps the same user id, so all previous orders stay visible in My Orders.
+        Works with either a guest-session token (the guest placed and paid for an order in that session) or an
+        order-access token from `POST /orders/lookup/verify` (the verified order was paid for).
+        Keeps the same user id, so all previous guest orders — and the gift points they earned — move to the account.
       requestBody:
         required: true
         content:
@@ -850,6 +854,33 @@ paths:
               schema: { $ref: '#/components/schemas/TrackedOrder' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /orders/lookup/verify:
+    post:
+      tags: [Orders]
+      operationId: verifyOrderAccess
+      summary: Guests prove ownership of an order to manage it (no login)
+      description: |
+        Email + order number + the last 4 digits of the phone on the order. Returns a 30-minute token that works only
+        for this order: view it, cancel, return, change the address (subject to the usual order flags) and claim the
+        guest account via `PUT /auth/set-password`. Orders that belong to a registered account answer
+        `409 ACCOUNT_ORDER` (log in instead). Mismatches get a generic 404. Shares the lookup rate limit.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrderAccessRequest' }
+      responses:
+        '200':
+          description: Order access granted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderAccess' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
         '429': { $ref: '#/components/responses/TooManyRequests' }
 
   /orders/{orderId}:
@@ -2579,6 +2610,26 @@ components:
         email: { type: string, format: email, maxLength: 254 }
         orderNumber: { type: string, pattern: '^[Bb][Ww]-[0-9A-Za-z]{8}$' }
       example: { email: customer@test.com, orderNumber: BW-SEED000B }
+
+    OrderAccessRequest:
+      type: object
+      additionalProperties: false
+      required: [email, orderNumber, phoneLast4]
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        orderNumber: { type: string, pattern: '^[Bb][Ww]-[0-9A-Za-z]{8}$' }
+        phoneLast4: { type: string, pattern: '^\d{4}$', description: Last 4 digits of the phone on the shipping address }
+      example: { email: guest@example.com, orderNumber: BW-AB12CD34, phoneLast4: '3210' }
+
+    OrderAccess:
+      type: object
+      description: Order-scoped access for a guest (token valid for one order, 30 minutes).
+      required: [token, expiresAt, order, giftPoints]
+      properties:
+        token: { type: string, description: 'Bearer token usable only for this order and PUT /auth/set-password' }
+        expiresAt: { type: string, format: date-time }
+        order: { $ref: '#/components/schemas/Order' }
+        giftPoints: { type: integer, minimum: 0, description: Gift points waiting on this guest e-mail }
 
     TrackedOrder:
       type: object

@@ -245,6 +245,12 @@
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "body": { "mimeType": "application/json", "text": "{\n  \"password\": \"Reader@123\",\n  \"confirmPassword\": \"Reader@123\"\n}" }
     },
+    {
+      "_id": "req_guest_verify", "_type": "request", "parentId": "fld_guest", "name": "Guest: manage order (verify, public)", "method": "POST", "metaSortKey": 3,
+      "url": "{{ _.base_url }}/orders/lookup/verify",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "mimeType": "application/json", "text": "{\n  \"email\": \"guest.reader@example.com\",\n  \"orderNumber\": \"BW-XXXXXXXX\",\n  \"phoneLast4\": \"3210\"\n}" }
+    },
 
     {
       "_id": "req_admin_orders", "_type": "request", "parentId": "fld_admin", "name": "All orders (CONFIRMED)", "method": "GET", "metaSortKey": 0,

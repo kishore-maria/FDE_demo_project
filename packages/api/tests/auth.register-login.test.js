@@ -59,6 +59,7 @@ describe('POST /api/auth/register', () => {
     const { email } = await createUser({ role: 'GUEST' });
     const res = await request(app).post('/api/auth/register').send(newReader({ email }));
     expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('GUEST_ACCOUNT');
   });
 
   test.each([
