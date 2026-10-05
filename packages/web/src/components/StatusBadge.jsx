@@ -15,6 +15,8 @@ const STYLES = {
   UNPAID: ['Unpaid', 'bg-bw-warning/15 text-bw-warning border-bw-warning/40'],
   FAILED: ['Payment failed', 'bg-bw-danger/15 text-red-300 border-bw-danger/40'],
   REFUNDED: ['Refunded', 'bg-bw-subtle/15 text-bw-muted border-bw-subtle/40'],
+  ACTIVE: ['Active', 'bg-bw-success/15 text-green-300 border-bw-success/40'],
+  INACTIVE: ['Inactive', 'bg-bw-subtle/15 text-bw-muted border-bw-subtle/40'],
 };
 
 export const STATUS_LABELS = Object.fromEntries(Object.entries(STYLES).map(([key, [label]]) => [key, label]));

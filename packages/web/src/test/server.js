@@ -15,6 +15,7 @@ const defaults = [
   http.get(`${API}/books/bestsellers`, () => HttpResponse.json({ items: [] })),
   http.get(`${API}/books/new-launches`, () => HttpResponse.json({ items: [] })),
   http.get(`${API}/books`, () => HttpResponse.json(emptyPage)),
+  http.get(`${API}/admin/books`, () => HttpResponse.json(emptyPage)),
 ];
 
 /** Shared MSW server; tests add handlers with server.use(...). Unhandled requests fail the test. */

@@ -465,7 +465,7 @@ Steps: public form (email + order number BW-…), prefill from `?orderNumber=&em
 🧪 Tests: `TrackOrderPage.test.jsx`.
 
 #### MT-35 — Admin pages + PR #2
-Status: [ ] · Depends: MT-34
+Status: [x] · Depends: MT-34
 Steps: `/admin` layout; tables + forms for books (categories multi-select, relations), categories, publishers, authors, coupons, store + policies; orders list with "Advance shipment" button. Push; PR #2 "Implement BookWorm web app" with screenshots.
 ✅ Verify: admin creates book visible on home grid · advance shipment updates customer order detail · customer cannot open /admin.
 🧪 Tests: `AdminBooks.test.jsx` — create form validation; guard redirect.
