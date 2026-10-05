@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import AppRoutes from '../router/AppRouter.jsx';
 import { useAuthStore } from '../stores/useAuthStore.js';
@@ -19,7 +19,9 @@ export function signIn(role = 'customer') {
   useAuthStore.setState({ user: users[role], token: `token-${role}` });
 }
 
+/** Unmounts first so resetting the stores doesn't update components outside act(). */
 export function signOut() {
+  cleanup();
   useAuthStore.setState({ user: null, token: null });
   useCartStore.setState({ mode: 'local', items: [], loading: false });
 }

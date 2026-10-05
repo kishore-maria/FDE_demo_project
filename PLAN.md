@@ -418,7 +418,7 @@ Steps: forms per design theme; on success → store login → `syncAfterAuth()` 
 🧪 Tests: `LoginPage.test.jsx`, `RegisterPage.test.jsx` with MSW.
 
 #### MT-27 — Home / Catalogue page
-Status: [ ] · Depends: MT-26
+Status: [x] · Depends: MT-26
 Steps: GenreSidebar (All + 19 + Publishers), FilterBar (Search debounced, Language, Format, Price Range buckets ₹0–200/200–400/400–600/600+, Sort), sections vs results grid, active filter chips, pagination, URL sync via `useSearchParams`, skeletons, EmptyState.
 ✅ Verify: anonymous home shows 3 sections matching design books · logged-in customer "Recommended" shows personalised · selecting Self-help shows grid + URL `?category=self-help` · refresh keeps filters · publisher link filters.
 🧪 Tests: `HomePage.test.jsx` — sections render, filter switches to grid, URL params applied.
