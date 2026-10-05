@@ -78,7 +78,7 @@ describe('GET /api/books', () => {
     for (const book of res.body.items) {
       expect(book.priceInr).toBe(formatINR(book.pricePaise));
       expect(book.priceInr).toMatch(/^₹[\d,]+(\.\d{2})?$/);
-      expect(book.deliveryText).toMatch(book.format === 'EBOOK' ? /^Instant download$/ : /^Delivery by \w{3}, \d{1,2} \w{3}$/);
+      expect(book.deliveryText).toBe(book.format === 'EBOOK' ? 'Instant download' : 'Usually delivered in 1–8 business days');
       expect(book.categories[0].isPrimary).toBe(true);
       expect(book.inStock).toBe(true);
     }

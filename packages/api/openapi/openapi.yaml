@@ -795,7 +795,8 @@ paths:
       summary: Create a PENDING order from my cart and reserve stock for 30 minutes
       description: |
         Provide either `addressId` (saved address) or `address` (typed in). The cart is not cleared and the coupon
-        and gift points are not consumed until payment succeeds.
+        and gift points are not consumed until payment succeeds. Orders with printed books need a serviceable
+        delivery PIN (422 `PIN_NOT_SERVICEABLE` otherwise); the delivery date is committed when payment succeeds.
       requestBody:
         required: true
         content:
@@ -910,7 +911,7 @@ paths:
     patch:
       tags: [Orders]
       operationId: updateOrderAddress
-      summary: Change the delivery address before the order ships
+      summary: Change the delivery address before the order ships (re-estimates the delivery date)
       requestBody:
         required: true
         content:
@@ -927,6 +928,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
 
   # ───────────────────────────── Payments ─────────────────────────────
   /payments/initiate:
@@ -1015,7 +1017,7 @@ paths:
     post:
       tags: [Shipments]
       operationId: calculateShippingRate
-      summary: Shipping charge and estimated delivery
+      summary: Shipping charge and PIN-based delivery estimate
       security: []
       requestBody:
         required: true
@@ -2105,7 +2107,7 @@ components:
         ratingCount: { type: integer, minimum: 0 }
         salesCount: { type: integer, minimum: 0 }
         inStock: { type: boolean }
-        deliveryText: { type: string, example: 'Delivery by Mon, 21 Jul' }
+        deliveryText: { type: string, example: 'Usually delivered in 1–8 business days', description: 'Generic until the shopper gives a PIN; eBooks say "Instant download"' }
       example:
         id: 3655c0fb-15c6-56a2-a40d-e0636592fb83
         slug: joy-of-minimalism
@@ -2124,7 +2126,7 @@ components:
         ratingCount: 36
         salesCount: 145
         inStock: true
-        deliveryText: 'Delivery by Thu, 8 Oct'
+        deliveryText: 'Usually delivered in 1–8 business days'
 
     BookPage:
       allOf:
@@ -2719,23 +2721,35 @@ components:
       properties:
         subtotalPaise: { $ref: '#/components/schemas/Paise' }
         allDigital: { type: boolean, default: false, description: True when every item is an eBook }
-      example: { subtotalPaise: 30000 }
+        pin: { type: string, pattern: '^\d{6}$', description: Destination PIN code; without it no firm date is given }
+      example: { subtotalPaise: 30000, pin: '560001' }
 
     ShippingRate:
       type: object
-      required: [shippingRatePaise, shippingRateInr, freeShippingEligible, estimatedDelivery, estimatedDeliveryText]
+      required: [shippingRatePaise, shippingRateInr, freeShippingEligible, serviceable, estimatedDelivery, estimatedDeliveryText]
       properties:
         shippingRatePaise: { $ref: '#/components/schemas/Paise' }
         shippingRateInr: { $ref: '#/components/schemas/Inr' }
         freeShippingEligible: { type: boolean }
-        estimatedDelivery: { type: string, format: date-time }
+        serviceable: { type: boolean, nullable: true, description: null when no PIN was given }
+        zone:
+          type: string
+          nullable: true
+          enum: [LOCAL, STATE, REGION, METRO, NATIONAL, REMOTE, DIGITAL, null]
+        estimatedDeliveryEarliest: { type: string, format: date-time, nullable: true }
+        estimatedDelivery: { type: string, format: date-time, nullable: true, description: Latest promised date (committed at payment) }
         estimatedDeliveryText: { type: string }
+        dispatchCutoffAt: { type: string, format: date-time, nullable: true, description: Order before this time to ship today (2 PM IST) }
       example:
         shippingRatePaise: 4900
         shippingRateInr: ₹49
         freeShippingEligible: false
-        estimatedDelivery: '2026-10-08T10:00:00.000Z'
-        estimatedDeliveryText: 'Delivery by Thu, 8 Oct'
+        serviceable: true
+        zone: LOCAL
+        estimatedDeliveryEarliest: '2026-10-06T06:30:00.000Z'
+        estimatedDelivery: '2026-10-06T06:30:00.000Z'
+        estimatedDeliveryText: 'Delivery by Tue, 6 Oct'
+        dispatchCutoffAt: '2026-10-05T08:30:00.000Z'
 
     # ── Store ──
     StorePolicy:

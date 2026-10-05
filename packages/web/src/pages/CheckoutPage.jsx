@@ -1,3 +1,4 @@
+import { isServiceablePin } from 'bookworm-shared';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -6,12 +7,14 @@ import { errorCode, errorMessage } from '../api/client.js';
 import { ordersApi } from '../api/orders.js';
 import AddressForm, { EMPTY_ADDRESS } from '../components/AddressForm.jsx';
 import Breadcrumb from '../components/Breadcrumb.jsx';
+import { DeliveryPreview } from '../components/DeliveryEstimate.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import OrderSummaryPanel from '../components/OrderSummaryPanel.jsx';
 import { useAsync } from '../hooks/useAsync.js';
 import { selectIsGuest, selectIsRegistered, useAuthStore } from '../stores/useAuthStore.js';
 import { cartTotals, useCartStore } from '../stores/useCartStore.js';
+import { useDeliveryStore } from '../stores/useDeliveryStore.js';
 import CartItems from './checkout/CartItems.jsx';
 import CouponField from './checkout/CouponField.jsx';
 import GuestGate from './checkout/GuestGate.jsx';
@@ -62,6 +65,7 @@ export default function CheckoutPage() {
   const [order, setOrder] = useState(null);
   const [paid, setPaid] = useState(null);
   const isGuest = useAuthStore(selectIsGuest);
+  const preferredPin = useDeliveryStore((state) => state.pin);
 
   const saved = useAsync(() => (isRegistered ? ordersApi.addresses() : Promise.resolve([])), [isRegistered]);
   const wallet = useAsync(() => (isRegistered ? ordersApi.wallet() : Promise.resolve(null)), [isRegistered]);
@@ -103,8 +107,22 @@ export default function CheckoutPage() {
   const initialAddress = useMemo(() => {
     const savedAddress = addresses.find((address) => address.id === selectedAddressId);
     if (savedAddress) return pickAddress(savedAddress);
-    return { ...EMPTY_ADDRESS, firstName: user?.firstName ?? '', lastName: user?.lastName ?? '', email: user?.email ?? '' };
+    return {
+      ...EMPTY_ADDRESS,
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      email: user?.email ?? '',
+      pin: preferredPin ?? '',
+    };
+    // The navbar PIN only seeds a new address form; changing it later must not reset what was typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addresses, selectedAddressId, user]);
+
+  // The delivery date preview follows the PIN in the address form; the server commits it at payment.
+  const [checkoutPin, setCheckoutPin] = useState('');
+  useEffect(() => setCheckoutPin(initialAddress.pin ?? ''), [initialAddress]);
+  const allDigital = items.length > 0 && items.every(({ book }) => book.format === 'EBOOK');
+  const pinBlocked = !allDigital && /^\d{6}$/.test(checkoutPin) && !isServiceablePin(checkoutPin);
 
   const handleCheckout = async (address) => {
     setSubmitting(true);
@@ -169,7 +187,14 @@ export default function CheckoutPage() {
             <section className="card p-5" aria-label="Delivery address">
               <h2 className="mb-4 text-lg font-semibold">Address</h2>
               {isRegistered && <SavedAddressPicker addresses={addresses} selectedId={selectedAddressId} onSelect={setSelectedAddressId} />}
-              <AddressForm key={`${selectedAddressId}-${user?.email ?? ''}`} initialValue={initialAddress} onSubmit={handleCheckout} formId="checkout-address">
+              <AddressForm
+                key={`${selectedAddressId}-${user?.email ?? ''}`}
+                initialValue={initialAddress}
+                onSubmit={handleCheckout}
+                onPinChange={setCheckoutPin}
+                requireServiceablePin={!allDigital}
+                formId="checkout-address"
+              >
                 {isRegistered && (
                   <label className="flex items-center gap-2 text-sm text-bw-muted">
                     <input type="checkbox" checked={saveAddress} onChange={(event) => setSaveAddress(event.target.checked)} />
@@ -187,15 +212,22 @@ export default function CheckoutPage() {
           <OrderSummaryPanel
             totals={totals}
             footer={
-              <button
-                type="submit"
-                form="checkout-address"
-                className="btn-primary mt-4 w-full"
-                disabled={!showForm || submitting}
-                title={showForm ? undefined : 'Enter your e-mail or log in first'}
-              >
-                {submitting ? 'Reserving your books…' : 'Pay Now'}
-              </button>
+              <>
+                {showForm && (
+                  <section aria-label="Estimated delivery" className="mt-4 border-t border-bw-border pt-3">
+                    <DeliveryPreview pin={checkoutPin} digital={allDigital} />
+                  </section>
+                )}
+                <button
+                  type="submit"
+                  form="checkout-address"
+                  className="btn-primary mt-4 w-full"
+                  disabled={!showForm || submitting || pinBlocked}
+                  title={showForm ? undefined : 'Enter your e-mail or log in first'}
+                >
+                  {submitting ? 'Reserving your books…' : 'Pay Now'}
+                </button>
+              </>
             }
           >
             <CouponField

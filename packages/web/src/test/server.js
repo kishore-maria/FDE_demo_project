@@ -17,6 +17,8 @@ const defaults = [
   http.get(`${API}/books`, () => HttpResponse.json(emptyPage)),
   http.get(`${API}/admin/books`, () => HttpResponse.json(emptyPage)),
   http.get(`${API}/orders`, () => HttpResponse.json(emptyPage)),
+  // The navbar looks up a signed-in customer's default address PIN.
+  http.get(`${API}/users/me/addresses`, () => HttpResponse.json({ items: [] })),
 ];
 
 /** Shared MSW server; tests add handlers with server.use(...). Unhandled requests fail the test. */

@@ -15,6 +15,7 @@ A dark-themed online bookstore where visitors browse and search the catalogue, b
 - **Cart + checkout on one page** — anonymous cart merged on sign-in, saved or typed address, coupons, gift points, 30-minute stock reservation.
 - **Mock payments** — credit/debit card, UPI, wallet; failure + retry; only the last 4 card digits are ever stored.
 - **Orders** — history, Buy Again, cancel within 48 h with refund, return within 7 days with a return shipment, change address before shipping, shipment timeline.
+- **PIN-based delivery dates** — "Deliver to" PIN in the navbar and on book pages, zone rules from the Bengaluru warehouse (same city 1 day … remote 6–8 days), 2 PM IST dispatch cutoff, weekends and national holidays skipped; the date is committed at payment.
 - **Guests** — buy with just an e-mail, track the order publicly, convert to a full account afterwards.
 - **My Writers** — followed authors, their new books and suggested writers (authors are auto-followed on purchase).
 - **Admin** — books (categories, primary genre, up-sell/cross-sell), categories, publishers, authors, coupons, store and policies, all orders with an "Advance shipment" simulator.
@@ -100,7 +101,7 @@ The reference workflow was written for Spring Boot; this is how each step maps o
 | [Data model](docs/data-model.md) | ER diagram, tables, status machines |
 | [API reference](docs/api-reference.md) | Conventions, endpoints, error codes, curl walkthrough |
 | [Frontend components](docs/frontend-components.md) | Components, pages, state, test utilities |
-| [Data flows](docs/data-flows.md) | Guest flow, checkout/payment/reservation, cancel/return/refund, recommendations |
+| [Data flows](docs/data-flows.md) | Guest flow, checkout/payment/reservation, cancel/return/refund, PIN-based delivery estimates, recommendations |
 | [Developer guide](docs/developer-guide.md) | Setup, env vars, scripts, Docker, common errors |
 | [Demo script](docs/demo-script.md) | 10-step walkthrough |
 
@@ -109,3 +110,4 @@ The reference workflow was written for Spring Boot; this is how each step maps o
 - 12% tax is taken from the designs (printed books are GST-exempt in India); it is a single constant in `bookworm-shared`.
 - Payments are mocked; there is no e-mail/OTP verification, so a guest account can be claimed by whoever completes a purchase with that e-mail in the same session (mitigated by session scoping).
 - Cover images and avatars come from picsum.photos and pravatar.cc, so the demo needs internet access.
+- Delivery dates come from PIN-code zone rules (no courier API); festival holidays must be added to `packages/shared/src/delivery.js` each year.

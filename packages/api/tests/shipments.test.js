@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { estimateDelivery } from 'bookworm-shared';
 import request from 'supertest';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { createApp } from '../src/app.js';
@@ -36,12 +37,32 @@ describe('POST /api/shipments/calculate-rate', () => {
     expect(res.body.shippingRateInr).toBe(expected ? '₹49' : '₹0');
   });
 
-  test('ETA is 3 business days out and never on a weekend', async () => {
+  test('without a PIN there is no firm date', async () => {
     const res = await rate({ subtotalPaise: 30000 });
-    const eta = new Date(res.body.estimatedDelivery);
-    expect([0, 6]).not.toContain(eta.getDay());
-    expect(eta.getTime() - Date.now()).toBeGreaterThanOrEqual(3 * 24 * 60 * 60 * 1000 - 60_000);
-    expect(res.body.estimatedDeliveryText).toMatch(/^Delivery by \w{3}, \d{1,2} \w{3}$/);
+    expect(res.body).toMatchObject({
+      serviceable: null,
+      zone: null,
+      estimatedDelivery: null,
+      estimatedDeliveryText: 'Usually delivered in 1–8 business days',
+    });
+  });
+
+  test('with a PIN the estimate follows the zone and never lands on a weekend', async () => {
+    const res = await rate({ subtotalPaise: 30000, pin: '600001' });
+    const expected = estimateDelivery({ pin: '600001' });
+    expect(res.body).toMatchObject({ serviceable: true, zone: 'METRO', estimatedDeliveryText: expected.text });
+    expect(res.body.estimatedDelivery).toBe(expected.latest.toISOString());
+    expect([0, 6]).not.toContain(new Date(res.body.estimatedDelivery).getUTCDay());
+  });
+
+  test('remote PINs get a range and unserviceable PINs are flagged', async () => {
+    const remote = await rate({ subtotalPaise: 30000, pin: '781001' });
+    expect(remote.body.zone).toBe('REMOTE');
+    expect(remote.body.estimatedDeliveryText).toMatch(/^Delivery between /);
+    expect(new Date(remote.body.estimatedDeliveryEarliest) < new Date(remote.body.estimatedDelivery)).toBe(true);
+
+    const blocked = await rate({ subtotalPaise: 30000, pin: '999001' });
+    expect(blocked.body).toMatchObject({ serviceable: false, estimatedDelivery: null });
   });
 
   test('eBook-only orders say instant download', async () => {
@@ -52,6 +73,7 @@ describe('POST /api/shipments/calculate-rate', () => {
   test('is public and validates input', async () => {
     expect((await rate({})).status).toBe(400);
     expect((await rate({ subtotalPaise: -5 })).status).toBe(400);
+    expect((await rate({ subtotalPaise: 100, pin: '5600' })).status).toBe(400);
   });
 });
 

@@ -75,7 +75,7 @@ Auth column: **public** · **any** (any valid token, guest included) · **regist
 | POST | `/payments/confirm` | owner | `{ sessionId, card? \| upiId?, forceFailure? }` → `{ success, reason, order }` |
 | GET | `/payments/wallet` | registered | Gift points + wallet balance |
 | GET | `/shipments/order/{orderId}` | owner | |
-| POST | `/shipments/calculate-rate` | public | `{ subtotalPaise, allDigital? }` |
+| POST | `/shipments/calculate-rate` | public | `{ subtotalPaise, allDigital?, pin? }` → charge + PIN-based estimate (`serviceable`, `zone`, date range, dispatch cutoff) |
 
 ### Admin (role ADMIN)
 
@@ -101,6 +101,7 @@ Auth column: **public** · **any** (any valid token, guest included) · **regist
 | 409 | `ALREADY_FOLLOWING`, `BOOK_HAS_ORDERS`, `CATEGORY_IN_USE`, `CATEGORY_HAS_CHILDREN`, `PUBLISHER_IN_USE`, `AUTHOR_IN_USE`, `CONFLICT` | |
 | 422 | `CART_EMPTY`, `INSUFFICIENT_POINTS`, `POINTS_NOT_ALLOWED` | Checkout |
 | 422 | `COUPON_NOT_FOUND`, `COUPON_INACTIVE`, `COUPON_EXPIRED`, `COUPON_USAGE_LIMIT_REACHED`, `COUPON_MIN_ORDER_NOT_MET` | Checkout with an invalid coupon |
+| 422 | `PIN_NOT_SERVICEABLE` | Checkout or address change to a PIN we don't deliver to (printed books only) |
 | 429 | `RATE_LIMITED` | Too many order lookups |
 | 500 | `INTERNAL_ERROR` | Unexpected (details are logged server-side only) |
 

@@ -149,6 +149,7 @@ async function finalizeOrder(tx, { order, payment, details, now }) {
     orderId: order.id,
     shippingRatePaise: order.deliveryChargePaise,
     digitalOnly,
+    pin: order.shippingAddress?.pin,
     now,
   });
   await tx.orderItem.updateMany({ where: { orderId: order.id }, data: { deliveryDate: shipment.estimatedDelivery } });

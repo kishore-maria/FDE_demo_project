@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { errorMessage } from '../api/client.js';
 import { useCartStore } from '../stores/useCartStore.js';
 import { formatLabel } from '../utils/format.js';
+import { DeliveryText } from './DeliveryEstimate.jsx';
 
 export const bookShape = PropTypes.shape({
   id: PropTypes.string.isRequired,
@@ -90,7 +91,7 @@ export default function BookCard({ book, compact = false }) {
           </>
         )}
         <p className={`mt-auto font-semibold ${compact ? 'text-sm' : 'text-lg'}`}>{book.priceInr}</p>
-        {!compact && book.deliveryText && <p className="text-xs text-bw-success">{book.deliveryText}</p>}
+        {!compact && <DeliveryText format={book.format} fallback={book.deliveryText} />}
         {compact && (
           <button type="button" onClick={addToCart} disabled={adding || outOfStock} className="btn-ghost self-start px-0 py-0 text-xs">
             {outOfStock ? 'Out of stock' : 'Add to Cart'}

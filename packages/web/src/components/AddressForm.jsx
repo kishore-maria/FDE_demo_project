@@ -1,3 +1,4 @@
+import { isServiceablePin } from 'bookworm-shared';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 
@@ -16,8 +17,11 @@ export const EMPTY_ADDRESS = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Returns { field: message } for invalid fields (empty object when valid). Mirrors the API's AddressInput. */
-export function validateAddress(values) {
+/**
+ * Returns { field: message } for invalid fields (empty object when valid). Mirrors the API's AddressInput;
+ * unless disabled (eBook-only orders) the PIN must also be one we deliver to.
+ */
+export function validateAddress(values, { requireServiceablePin = true } = {}) {
   const errors = {};
   const required = { firstName: 'First name', lastName: 'Last name', line1: 'Address', city: 'City', state: 'State' };
   for (const [field, label] of Object.entries(required)) {
@@ -25,6 +29,7 @@ export function validateAddress(values) {
   }
   if (!EMAIL.test(values.email?.trim() ?? '')) errors.email = 'Enter a valid e-mail';
   if (!/^\d{6}$/.test(values.pin ?? '')) errors.pin = 'Pin must be 6 digits';
+  else if (requireServiceablePin && !isServiceablePin(values.pin)) errors.pin = "Sorry, we don't deliver to this PIN yet";
   if (!/^\d{10}$/.test(values.phone ?? '')) errors.phone = 'Phone must be 10 digits';
   return errors;
 }
@@ -93,21 +98,30 @@ Field.propTypes = {
 
 /**
  * Address form with client-side validation. Submits via its own form element, so a button elsewhere on the
- * page can trigger it with `form={formId}`. `onSubmit` receives the AddressInput payload.
+ * page can trigger it with `form={formId}`. `onSubmit` receives the AddressInput payload; `onPinChange`
+ * reports the PIN as it is typed (for delivery previews).
  */
-export default function AddressForm({ initialValue = EMPTY_ADDRESS, onSubmit, formId = 'address-form', children = null }) {
+export default function AddressForm({
+  initialValue = EMPTY_ADDRESS,
+  onSubmit,
+  onPinChange,
+  requireServiceablePin = true,
+  formId = 'address-form',
+  children = null,
+}) {
   const [values, setValues] = useState({ ...EMPTY_ADDRESS, ...initialValue });
   const [errors, setErrors] = useState({});
 
   const handleChange = (name, value) => {
     const cleaned = name === 'pin' || name === 'phone' ? value.replace(/\D/g, '') : value;
     setValues((current) => ({ ...current, [name]: cleaned }));
+    if (name === 'pin') onPinChange?.(cleaned);
     if (errors[name]) setErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const found = validateAddress(values);
+    const found = validateAddress(values, { requireServiceablePin });
     setErrors(found);
     if (Object.keys(found).length === 0) onSubmit(toAddressPayload(values));
   };
@@ -136,6 +150,8 @@ export default function AddressForm({ initialValue = EMPTY_ADDRESS, onSubmit, fo
 AddressForm.propTypes = {
   initialValue: PropTypes.object,
   onSubmit: PropTypes.func.isRequired,
+  onPinChange: PropTypes.func,
+  requireServiceablePin: PropTypes.bool,
   formId: PropTypes.string,
   children: PropTypes.node,
 };

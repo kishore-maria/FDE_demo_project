@@ -1,7 +1,8 @@
+import { isServiceablePin } from 'bookworm-shared';
 import { assertOrderAccess } from '../../lib/access.js';
-import { conflict, notFound } from '../../lib/errors.js';
+import { conflict, notFound, unprocessable } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
-import { createShipment } from '../shipments/shipments.service.js';
+import { committedDeliveryDate, createShipment } from '../shipments/shipments.service.js';
 import { toAddressData } from '../users/addresses.serializer.js';
 import {
   orderFlags,
@@ -127,21 +128,34 @@ export function returnOrder(user, orderId, now = new Date()) {
     'canReturn',
     (order) => conflict(`Order ${order.orderNumber} can only be returned within 7 days of delivery`, 'CANNOT_RETURN'),
     async (tx, order) => {
-      await createShipment(tx, { orderId: order.id, type: 'RETURN', now });
+      await createShipment(tx, { orderId: order.id, type: 'RETURN', pin: order.shippingAddress?.pin, now });
       await tx.order.update({ where: { id: order.id }, data: { status: 'RETURN_REQUESTED' } });
     },
     now,
   );
 }
 
-/** PATCH /orders/:id/address — only while confirmed and not yet shipped. */
+/** Thrown by checkout and address changes when a printed-book order can't reach the PIN. */
+export const pinNotServiceable = (pin) =>
+  unprocessable(`Sorry, we don't deliver to PIN ${pin} yet`, 'PIN_NOT_SERVICEABLE', { pin });
+
+/** PATCH /orders/:id/address — only while confirmed and not yet shipped; the delivery date is re-estimated. */
 export function updateOrderAddress(user, orderId, address, now = new Date()) {
   return changeOrder(
     user,
     orderId,
     'canModifyAddress',
     (order) => conflict(`Order ${order.orderNumber} has already shipped`, 'CANNOT_MODIFY_ADDRESS'),
-    (tx, order) => tx.order.update({ where: { id: order.id }, data: { shippingAddress: toAddressData(address) } }),
+    async (tx, order) => {
+      if (!isServiceablePin(address.pin)) throw pinNotServiceable(address.pin);
+      await tx.order.update({ where: { id: order.id }, data: { shippingAddress: toAddressData(address) } });
+
+      const forward = order.shipments.find((shipment) => shipment.type === 'FORWARD');
+      if (!forward) return;
+      const estimatedDelivery = committedDeliveryDate(address.pin, now);
+      await tx.shipment.update({ where: { id: forward.id }, data: { estimatedDelivery } });
+      await tx.orderItem.updateMany({ where: { orderId: order.id }, data: { deliveryDate: estimatedDelivery } });
+    },
     now,
   );
 }

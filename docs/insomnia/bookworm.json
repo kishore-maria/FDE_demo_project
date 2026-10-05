@@ -190,7 +190,7 @@
       "_id": "req_rate", "_type": "request", "parentId": "fld_checkout", "name": "Shipping rate", "method": "POST", "metaSortKey": 5,
       "url": "{{ _.base_url }}/shipments/calculate-rate",
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "body": { "mimeType": "application/json", "text": "{\n  \"subtotalPaise\": 30000\n}" }
+      "body": { "mimeType": "application/json", "text": "{\n  \"subtotalPaise\": 30000,\n  \"pin\": \"560001\"\n}" }
     },
 
     {
