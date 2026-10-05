@@ -479,7 +479,7 @@ Steps: `packages/api/Dockerfile` (build context = repo root; node:20-alpine; npm
 🧪 Tests: manual checklist; `npm test` still green.
 
 #### MT-37 — Documentation, README, final PR
-Status: [ ] · Depends: MT-36
+Status: [x] · Depends: MT-36
 Steps: README (overview, screenshots, quick start, demo accounts, coupons, scripts, Swagger, Insomnia import, **workflow-slide → Node mapping table**, docs link); `docs/` 7 files (architecture with Mermaid diagram, data-model with ER diagram, api-reference, frontend-components, data-flows: guest flow, checkout/payment/reservation, cancel/return/refund, recommendations; developer-guide with common errors; demo-script); JSDoc on service functions; coverage `vitest --coverage` > 70% api + web; PR #3.
 ✅ Verify: fresh clone → follow developer-guide → running in < 10 min · coverage threshold met · all PRs merged.
 

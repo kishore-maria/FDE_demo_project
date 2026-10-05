@@ -36,6 +36,7 @@ export async function checkCoupon(code, subtotalPaise, { now = new Date(), db = 
   };
 }
 
+/** POST /coupons/validate — never throws for a bad coupon; returns valid=false with a reason and message. */
 export async function validateCoupon({ code, subtotalPaise }) {
   const result = await checkCoupon(code, subtotalPaise);
   return {

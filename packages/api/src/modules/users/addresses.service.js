@@ -9,6 +9,7 @@ async function findOwnAddress(userId, addressId, client = prisma) {
   return address;
 }
 
+/** GET /users/me/addresses — default first, then newest. */
 export async function listAddresses(userId) {
   const addresses = await prisma.address.findMany({
     where: { userId },
@@ -26,6 +27,7 @@ export async function createAddress(userId, input) {
   return serializeAddress(address);
 }
 
+/** PUT /users/me/addresses/:id — replaces the address fields (default flag unchanged). */
 export async function updateAddress(userId, addressId, input) {
   await findOwnAddress(userId, addressId);
   const address = await prisma.address.update({ where: { id: addressId }, data: toAddressData(input) });
@@ -43,6 +45,7 @@ export async function deleteAddress(userId, addressId) {
   });
 }
 
+/** PUT /users/me/addresses/:id/default — exactly one default address per user. */
 export async function setDefaultAddress(userId, addressId) {
   const address = await prisma.$transaction(async (tx) => {
     await findOwnAddress(userId, addressId, tx);

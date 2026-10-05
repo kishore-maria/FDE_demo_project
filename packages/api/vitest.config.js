@@ -20,5 +20,11 @@ export default defineConfig({
     sequence: { sequencer: SeedFirstSequencer },
     testTimeout: 20000,
     hookTimeout: 60000,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.js', 'prisma/seed/**/*.js'],
+      reporter: ['text-summary', 'html'],
+      thresholds: { lines: 70, statements: 70, functions: 70, branches: 70 },
+    },
   },
 });

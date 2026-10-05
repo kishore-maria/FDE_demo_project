@@ -75,12 +75,14 @@ export async function createGuestSession({ email }) {
   return authResponse(user, { gsid: randomUUID() });
 }
 
+/** GET /auth/profile — 401 when the account behind a still-valid token was deleted. */
 export async function getProfile(userId) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw unauthorized('Account no longer exists');
   return serializeUser(user);
 }
 
+/** PUT /auth/profile — updates only the provided name/phone fields. */
 export async function updateProfile(userId, { firstName, lastName, phone }) {
   await getProfile(userId);
   const user = await prisma.user.update({
