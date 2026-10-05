@@ -184,6 +184,43 @@ describe('CheckoutPage', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(screen.queryByRole('listitem', { name: 'Joy of Minimalism' })).not.toBeInTheDocument());
   });
+  test('paying shows the success overlay and empties the cart badge', async () => {
+    signedInCustomer();
+    let paid = false;
+    server.use(
+      http.get(`${API}/cart`, () => HttpResponse.json(paid ? cartResponse([]) : designCart)),
+      http.post(`${API}/orders/checkout`, () => HttpResponse.json({ order: pendingOrder() }, { status: 201 })),
+      http.post(`${API}/payments/initiate`, () =>
+        HttpResponse.json({ sessionId: 's-1', orderId: 'order-1', method: 'UPI', payableAmountPaise: 46896, payableAmountInr: '₹468.96' }),
+      ),
+      http.post(`${API}/payments/confirm`, () => {
+        paid = true;
+        return HttpResponse.json({
+          success: true,
+          reason: null,
+          order: {
+            ...pendingOrder(),
+            status: 'CONFIRMED',
+            contactEmail: 'customer@test.com',
+            items: [{ id: 'i-1', bookId: joy.id, title: 'Joy of Minimalism', coverImageUrl: joy.coverImageUrl, quantity: 1 }],
+          },
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp('/checkout');
+    await waitFor(() => expect(screen.getByLabelText('Address')).toHaveValue('221 MG Road'));
+    expect(screen.getByTestId('cart-badge')).toHaveTextContent('2');
+
+    await user.click(screen.getByRole('button', { name: 'Pay Now' }));
+    const modal = await screen.findByRole('dialog', { name: 'Complete Payment' });
+    await user.click(within(modal).getByRole('tab', { name: 'UPI' }));
+    await user.type(within(modal).getByLabelText('UPI ID'), 'john@okaxis');
+    await user.click(within(modal).getByRole('button', { name: 'Pay Now' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Your purchase of the following reads is successful' })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('cart-badge')).not.toBeInTheDocument());
+  });
 });
 
 describe('guest gate', () => {

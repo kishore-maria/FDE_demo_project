@@ -436,7 +436,7 @@ Steps: Section 10 layout; guest gate → guest-session (409 → "Account exists,
 🧪 Tests: `CheckoutPage.test.jsx` — guest gate, coupon apply, totals, validation errors.
 
 #### MT-30 — Payment modal + success overlay
-Status: [ ] · Depends: MT-29
+Status: [x] · Depends: MT-29
 Steps: PaymentModal (tabs, card formatting/masking, UPI, Wallet balance with insufficient state, DEV simulate failure, spinner, error + retry, reservation-expired message → back to checkout); PaymentSuccessOverlay (design + guest order number, track link, conversion form → set-password → store login → toast; Skip).
 ✅ Verify: registered pay → success → cart badge 0 · guest pay → order number + track link + conversion works · failure then retry succeeds.
 🧪 Tests: `PaymentModal.test.jsx` (tabs, payload has no CVV persisted beyond request, failure + retry), `PaymentSuccessOverlay.test.jsx` (guest vs registered content).

@@ -10,12 +10,13 @@ import EmptyState from '../components/EmptyState.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import OrderSummaryPanel from '../components/OrderSummaryPanel.jsx';
 import { useAsync } from '../hooks/useAsync.js';
-import { selectIsRegistered, useAuthStore } from '../stores/useAuthStore.js';
+import { selectIsGuest, selectIsRegistered, useAuthStore } from '../stores/useAuthStore.js';
 import { cartTotals, useCartStore } from '../stores/useCartStore.js';
 import CartItems from './checkout/CartItems.jsx';
 import CouponField from './checkout/CouponField.jsx';
 import GuestGate from './checkout/GuestGate.jsx';
 import PaymentModal from './checkout/PaymentModal.jsx';
+import PaymentSuccessOverlay from './checkout/PaymentSuccessOverlay.jsx';
 
 const ADDRESS_FIELDS = Object.keys(EMPTY_ADDRESS);
 const pickAddress = (address) => Object.fromEntries(ADDRESS_FIELDS.map((key) => [key, address?.[key] ?? '']));
@@ -59,6 +60,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState(null);
+  const [paid, setPaid] = useState(null);
+  const isGuest = useAuthStore(selectIsGuest);
 
   const saved = useAsync(() => (isRegistered ? ordersApi.addresses() : Promise.resolve([])), [isRegistered]);
   const wallet = useAsync(() => (isRegistered ? ordersApi.wallet() : Promise.resolve(null)), [isRegistered]);
@@ -126,6 +129,21 @@ export default function CheckoutPage() {
 
   const crumbs = [{ label: 'Home', to: '/' }, { label: 'Checkout' }];
   const showForm = Boolean(token);
+
+  const handlePaid = (result) => {
+    setOrder(null);
+    setPaid({ order: result.order, isGuest });
+    setCoupon(null);
+    setUsePoints(false);
+    // Paid books were removed from the server cart.
+    fetchCart().catch(() => {});
+    wallet.reload();
+  };
+
+  const handleExpired = () => {
+    setOrder(null);
+    fetchCart().catch(() => {});
+  };
 
   let body;
   if (cartLoading && items.length === 0) {
@@ -205,7 +223,8 @@ export default function CheckoutPage() {
       <Breadcrumb items={crumbs} />
       <h1 className="page-title">Checkout</h1>
       {body}
-      {order && <PaymentModal order={order} onClose={() => setOrder(null)} />}
+      {order && <PaymentModal order={order} onClose={() => setOrder(null)} onPaid={handlePaid} onExpired={handleExpired} />}
+      {paid && <PaymentSuccessOverlay order={paid.order} isGuest={paid.isGuest} onClose={() => setPaid(null)} />}
     </div>
   );
 }
