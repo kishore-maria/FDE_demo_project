@@ -400,7 +400,7 @@ Steps: Tailwind 3 config with `bw-*` tokens (Section 10), base CSS; AppRouter: p
 🧪 Tests: `router.test.jsx` — public vs guarded routes.
 
 #### MT-24 — API client + stores
-Status: [ ] · Depends: MT-23
+Status: [x] · Depends: MT-23
 Steps: `api/client.js` (baseURL, Bearer injection, 401 policy: registered → logout + redirect login; guest → clear token + toast "Session expired, enter email again"; optional-auth public GETs retried without token); `useAuthStore` (persist key `bookworm-auth`; user, token; isAuthenticated, isGuest, isRegistered, isAdmin; login, logout, setGuestSession); `useCartStore` (mode local|server; local persisted items; actions call API in server mode; `syncAfterAuth()` posts merge then switches to server; itemCount, subtotal via shared).
 ✅ Verify: anonymous add → localStorage; login → merge → server cart contains items, local cleared · reload keeps session · 401 behaviours.
 🧪 Tests: `useCartStore.test.js` (local add/update/remove, totals, merge call with MSW), `client.test.js` (header injection, 401 policies).

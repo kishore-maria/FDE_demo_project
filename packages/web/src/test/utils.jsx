@@ -2,8 +2,9 @@ import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import AppRoutes from '../router/AppRouter.jsx';
 import { useAuthStore } from '../stores/useAuthStore.js';
+import { useCartStore } from '../stores/useCartStore.js';
 
-export const API = 'http://localhost:3001/api';
+export { API } from './server.js';
 
 export const users = {
   customer: { id: 'u-1', email: 'customer@test.com', firstName: 'John', lastName: 'Smith', role: 'CUSTOMER', giftPoints: 200 },
@@ -18,6 +19,7 @@ export function signIn(role = 'customer') {
 
 export function signOut() {
   useAuthStore.setState({ user: null, token: null });
+  useCartStore.setState({ mode: 'local', items: [], loading: false });
 }
 
 /** Shows the current location so tests can assert redirects. */

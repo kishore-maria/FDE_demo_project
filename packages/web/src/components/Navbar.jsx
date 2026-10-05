@@ -1,21 +1,24 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
-import PropTypes from 'prop-types';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { selectIsAdmin, selectIsRegistered, useAuthStore } from '../stores/useAuthStore.js';
+import { selectItemCount, useCartStore } from '../stores/useCartStore.js';
 import { CartIcon, GridIcon, UserIcon } from './icons.jsx';
 
 const navClass = ({ isActive }) =>
   `px-3 py-2 text-sm text-white no-underline hover:bg-bw-surface hover:no-underline ${isActive ? 'border-b-2 border-bw-accent' : ''}`;
 
-export default function Navbar({ cartCount = 0 }) {
+export default function Navbar() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isRegistered = useAuthStore(selectIsRegistered);
   const isAdmin = useAuthStore(selectIsAdmin);
   const logout = useAuthStore((state) => state.logout);
+  const cartCount = useCartStore(selectItemCount);
+  const resetCart = useCartStore((state) => state.reset);
 
   const handleLogout = () => {
     logout();
+    resetCart();
     navigate('/');
   };
 
@@ -122,5 +125,3 @@ export default function Navbar({ cartCount = 0 }) {
     </header>
   );
 }
-
-Navbar.propTypes = { cartCount: PropTypes.number };
