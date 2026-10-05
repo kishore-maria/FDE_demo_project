@@ -4,6 +4,7 @@ import AdminPage from '../pages/admin/AdminPage.jsx';
 import AuthorPage from '../pages/AuthorPage.jsx';
 import BookDetailPage from '../pages/BookDetailPage.jsx';
 import CheckoutPage from '../pages/CheckoutPage.jsx';
+import DevComponentsPage from '../pages/DevComponentsPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 import MyWritersPage from '../pages/MyWritersPage.jsx';
@@ -45,6 +46,7 @@ export default function AppRoutes() {
           }
         />
 
+        {import.meta.env.DEV && <Route path="dev/components" element={<DevComponentsPage />} />}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

@@ -406,7 +406,7 @@ Steps: `api/client.js` (baseURL, Bearer injection, 401 policy: registered → lo
 🧪 Tests: `useCartStore.test.js` (local add/update/remove, totals, merge call with MSW), `client.test.js` (header injection, 401 policies).
 
 #### MT-25 — Shared components
-Status: [ ] · Depends: MT-24
+Status: [x] · Depends: MT-24
 Steps: LoadingSpinner, SkeletonCard, EmptyState, ConfirmDialog (Headless UI Dialog), StatusBadge (all statuses), StarRating (interactive/read-only), BookCard (design layout, hover/focus Add to Cart, compact variant), AuthorCard, Breadcrumb, OrderSummaryPanel, AddressForm (validation pin 6 digits, phone 10 digits), ShipmentTimeline; PropTypes on all; `/dev/components` (DEV only).
 ✅ Verify: showcase renders all · keyboard focus shows Add to Cart.
 🧪 Tests: BookCard (price ₹149, eBook "Instant download", add-to-cart calls store), ConfirmDialog, EmptyState, StarRating, StatusBadge, AddressForm validation.
