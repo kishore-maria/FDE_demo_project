@@ -1,0 +1,11 @@
+{
+  "name": "bookworm-shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Currency, pricing, date and id utilities shared by api and web",
+  "exports": "./src/index.js",
+  "scripts": {
+    "test": "vitest run"
+  }
+}

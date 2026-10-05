@@ -1,0 +1,489 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  GUEST
+  CUSTOMER
+  ADMIN
+}
+
+enum BookFormat {
+  PAPERBACK
+  HARDCOVER
+  EBOOK
+}
+
+enum PolicyType {
+  RETURN
+  CANCELLATION
+  SHIPPING
+  PAYMENT
+}
+
+enum FollowSource {
+  MANUAL
+  AUTO_PURCHASE
+}
+
+enum BookRelationType {
+  UPSELL
+  CROSS_SELL
+}
+
+enum DiscountType {
+  FLAT
+  PERCENT
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  EXPIRED
+  RETURN_REQUESTED
+  RETURNED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  UPI
+  WALLET
+}
+
+enum PaymentTransactionStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ShipmentType {
+  FORWARD
+  RETURN
+}
+
+enum ShipmentStatus {
+  PROCESSING
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+}
+
+enum PointsTransactionType {
+  CREDIT
+  DEBIT
+}
+
+// ─── Member ──────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String   @id @default(uuid()) @db.Uuid
+  email              String   @unique
+  passwordHash       String?  @map("password_hash")
+  firstName          String   @default("") @map("first_name")
+  lastName           String   @default("") @map("last_name")
+  phone              String?
+  role               UserRole @default(CUSTOMER)
+  giftPoints         Int      @default(0) @map("gift_points")
+  walletBalancePaise Int      @default(0) @map("wallet_balance_paise")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  addresses             Address[]
+  follows               AuthorFollow[]
+  reviews               Review[]
+  wishlist              WishlistItem[]
+  cartItems             CartItem[]
+  orders                Order[]
+  giftPointTransactions GiftPointTransaction[]
+
+  @@map("users")
+}
+
+model Address {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  email     String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  pin       String
+  state     String
+  country   String   @default("India")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ─── Store ───────────────────────────────────────────────────────────────────
+
+model Store {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  policies StorePolicy[]
+  books    Book[]
+
+  @@map("stores")
+}
+
+model StorePolicy {
+  id      String     @id @default(uuid()) @db.Uuid
+  storeId String     @map("store_id") @db.Uuid
+  type    PolicyType
+  title   String
+  content String
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, type])
+  @@map("store_policies")
+}
+
+// ─── Catalog ─────────────────────────────────────────────────────────────────
+
+model Category {
+  id            String  @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String  @unique
+  parentId      String? @map("parent_id") @db.Uuid
+  displayOrder  Int     @default(0) @map("display_order")
+  showInSidebar Boolean @default(true) @map("show_in_sidebar")
+
+  parent   Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Category[]     @relation("CategoryTree")
+  books    BookCategory[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model BookCategory {
+  bookId     String  @map("book_id") @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  isPrimary  Boolean @default(false) @map("is_primary")
+
+  book     Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([bookId, categoryId])
+  @@index([categoryId])
+  @@map("book_categories")
+}
+
+model Publisher {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  logoUrl     String? @map("logo_url")
+
+  books Book[]
+
+  @@map("publishers")
+}
+
+model Author {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  slug     String  @unique
+  bio      String
+  photoUrl String? @map("photo_url")
+
+  books     Book[]
+  followers AuthorFollow[]
+
+  @@map("authors")
+}
+
+model AuthorFollow {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String       @map("user_id") @db.Uuid
+  authorId   String       @map("author_id") @db.Uuid
+  source     FollowSource @default(MANUAL)
+  followedAt DateTime     @default(now()) @map("followed_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, authorId])
+  @@index([authorId])
+  @@map("author_follows")
+}
+
+model Book {
+  id                String     @id @default(uuid()) @db.Uuid
+  slug              String     @unique
+  title             String
+  authorId          String     @map("author_id") @db.Uuid
+  publisherId       String     @map("publisher_id") @db.Uuid
+  storeId           String?    @map("store_id") @db.Uuid
+  shortDescription  String     @map("short_description")
+  description       String
+  isbn              String?    @unique
+  pricePaise        Int        @map("price_paise")
+  format            BookFormat
+  language          String     @default("English")
+  coverImageUrl     String     @map("cover_image_url")
+  backCoverImageUrl String?    @map("back_cover_image_url")
+  stockQuantity     Int        @default(100) @map("stock_quantity")
+  ratingAvg         Float      @default(0) @map("rating_avg")
+  ratingCount       Int        @default(0) @map("rating_count")
+  salesCount        Int        @default(0) @map("sales_count")
+  isEditorsPick     Boolean    @default(false) @map("is_editors_pick")
+  publishedAt       DateTime   @map("published_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  author        Author         @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  publisher     Publisher      @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  store         Store?         @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  categories    BookCategory[]
+  relationsFrom BookRelation[] @relation("RelationSource")
+  relationsTo   BookRelation[] @relation("RelationTarget")
+  reviews       Review[]
+  wishlistedBy  WishlistItem[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+
+  @@index([title])
+  @@index([publishedAt])
+  @@index([salesCount])
+  @@index([authorId])
+  @@index([publisherId])
+  @@map("books")
+}
+
+model BookRelation {
+  bookId        String           @map("book_id") @db.Uuid
+  relatedBookId String           @map("related_book_id") @db.Uuid
+  type          BookRelationType
+
+  book        Book @relation("RelationSource", fields: [bookId], references: [id], onDelete: Cascade)
+  relatedBook Book @relation("RelationTarget", fields: [relatedBookId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, relatedBookId, type])
+  @@map("book_relations")
+}
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+  bookId    String   @map("book_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  rating    Int
+  comment   String?  @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookId, userId])
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  bookId    String   @map("book_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@map("wishlists")
+}
+
+model CartItem {
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  bookId   String   @map("book_id") @db.Uuid
+  quantity Int      @default(1)
+  addedAt  DateTime @default(now()) @map("added_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@map("cart_items")
+}
+
+// ─── Order ───────────────────────────────────────────────────────────────────
+
+model Coupon {
+  id                 String       @id @default(uuid()) @db.Uuid
+  code               String       @unique
+  discountType       DiscountType @map("discount_type")
+  // Paise when FLAT, whole percent when PERCENT.
+  discountValue      Int          @map("discount_value")
+  maxDiscountPaise   Int?         @map("max_discount_paise")
+  minOrderValuePaise Int          @default(0) @map("min_order_value_paise")
+  validUntil         DateTime     @map("valid_until")
+  usageLimit         Int?         @map("usage_limit")
+  usedCount          Int          @default(0) @map("used_count")
+  isActive           Boolean      @default(true) @map("is_active")
+  createdAt          DateTime     @default(now()) @map("created_at")
+
+  orders Order[]
+
+  @@map("coupons")
+}
+
+model Order {
+  id                  String         @id @default(uuid()) @db.Uuid
+  orderNumber         String         @unique @map("order_number")
+  userId              String         @map("user_id") @db.Uuid
+  guestSessionId      String?        @map("guest_session_id")
+  contactEmail        String         @map("contact_email")
+  shippingAddress     Json           @map("shipping_address")
+  couponId            String?        @map("coupon_id") @db.Uuid
+  subtotalPaise       Int            @map("subtotal_paise")
+  taxPaise            Int            @map("tax_paise")
+  couponDiscountPaise Int            @default(0) @map("coupon_discount_paise")
+  giftDiscountPaise   Int            @default(0) @map("gift_discount_paise")
+  deliveryChargePaise Int            @map("delivery_charge_paise")
+  totalPaise          Int            @map("total_paise")
+  giftPointsRedeemed  Int            @default(0) @map("gift_points_redeemed")
+  giftPointsEarned    Int            @default(0) @map("gift_points_earned")
+  status              OrderStatus    @default(PENDING)
+  paymentStatus       PaymentStatus  @default(UNPAID) @map("payment_status")
+  paymentMethod       PaymentMethod? @map("payment_method")
+  reservedUntil       DateTime?      @map("reserved_until")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+  confirmedAt         DateTime?      @map("confirmed_at")
+  cancelledAt         DateTime?      @map("cancelled_at")
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Restrict)
+  coupon                Coupon?                @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  items                 OrderItem[]
+  payments              Payment[]
+  shipments             Shipment[]
+  giftPointTransactions GiftPointTransaction[]
+
+  @@index([userId, createdAt])
+  @@index([status, reservedUntil])
+  @@index([contactEmail])
+  @@map("orders")
+}
+
+model OrderItem {
+  id                   String    @id @default(uuid()) @db.Uuid
+  orderId              String    @map("order_id") @db.Uuid
+  bookId               String    @map("book_id") @db.Uuid
+  titleSnapshot        String    @map("title_snapshot")
+  quantity             Int
+  priceAtPurchasePaise Int       @map("price_at_purchase_paise")
+  deliveryDate         DateTime? @map("delivery_date")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  book  Book  @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([bookId])
+  @@map("order_items")
+}
+
+// ─── Payment ─────────────────────────────────────────────────────────────────
+
+model Payment {
+  id              String                   @id @default(uuid()) @db.Uuid
+  orderId         String                   @map("order_id") @db.Uuid
+  sessionId       String                   @unique @map("session_id")
+  method          PaymentMethod
+  amountPaise     Int                      @map("amount_paise")
+  status          PaymentTransactionStatus @default(INITIATED)
+  // Never store full card numbers or CVV.
+  cardLast4       String?                  @map("card_last4") @db.VarChar(4)
+  upiHandleMasked String?                  @map("upi_handle_masked")
+  failureReason   String?                  @map("failure_reason")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  refundedAt      DateTime?                @map("refunded_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+// ─── Shipping ────────────────────────────────────────────────────────────────
+
+model Shipment {
+  id                String         @id @default(uuid()) @db.Uuid
+  orderId           String         @map("order_id") @db.Uuid
+  type              ShipmentType   @default(FORWARD)
+  trackingNumber    String         @unique @map("tracking_number")
+  carrier           String         @default("BookWorm Express")
+  status            ShipmentStatus @default(PROCESSING)
+  estimatedDelivery DateTime       @map("estimated_delivery")
+  actualDelivery    DateTime?      @map("actual_delivery")
+  shippingRatePaise Int            @default(0) @map("shipping_rate_paise")
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  order  Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events ShipmentEvent[]
+
+  @@unique([orderId, type])
+  @@map("shipments")
+}
+
+model ShipmentEvent {
+  id         String         @id @default(uuid()) @db.Uuid
+  shipmentId String         @map("shipment_id") @db.Uuid
+  status     ShipmentStatus
+  note       String
+  occurredAt DateTime       @default(now()) @map("occurred_at")
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId, occurredAt])
+  @@map("shipment_events")
+}
+
+// ─── Gift points ─────────────────────────────────────────────────────────────
+
+model GiftPointTransaction {
+  id        String                @id @default(uuid()) @db.Uuid
+  userId    String                @map("user_id") @db.Uuid
+  points    Int
+  type      PointsTransactionType
+  reason    String
+  orderId   String?               @map("order_id") @db.Uuid
+  createdAt DateTime              @default(now()) @map("created_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("gift_point_transactions")
+}

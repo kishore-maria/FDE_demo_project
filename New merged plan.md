@@ -247,7 +247,7 @@ Format: Goal · Depends · Steps · ✅ Verify · 🧪 Tests. Run `npm test` (re
 ### PHASE A — Foundation (branch feature/api-implementation)
 
 #### MT-01 — Monorepo scaffold, shared package, dev database
-Status: [x] · Depends: —
+Status: [ ] · Depends: —
 Steps:
 1. `git init`, create `main`, then `feature/api-implementation`. Add .gitignore (node_modules, .env, .env.test, dist, coverage, .DS_Store), .editorconfig, .nvmrc (20), .dockerignore.
 2. Root package.json: private, `"type": "module"`, workspaces `packages/*`, devDeps `concurrently`. Scripts: `dev` (api+web concurrently), `dev:api`, `dev:web`, `build`, `test` (all workspaces), `db:migrate`, `db:seed`, `db:reset`, `db:studio`, `spec:validate`.
@@ -261,31 +261,31 @@ Steps:
 🧪 Tests (shared): formatINR(14900)=₹149, (39900)=₹399, (0)=₹0, (6096)=₹60.96, (12345600)=₹1,23,456; formatINRFixed(50800)=₹508.00; toPaise(99.5)=9950; computeOrderTotals: design cart 14900+35900 with BOOK10 → subtotal 50800, tax 6096, delivery 0, discount 10000, total 46896; delivery 4900 under ₹500; eBook-only delivery 0; PERCENT cap; min order not met → 0; gift discount capped at payable; pointsEarned; addBusinessDays Fri+3 = Wed; generateOrderNumber matches /^BW-[0-9A-HJKMNP-TV-Z]{8}$/.
 
 #### MT-02 — Prisma schema, migration, Prisma client
-Status: [x] · Depends: MT-01
+Status: [ ] · Depends: MT-01
 Steps: write all 21 models + enums (Section 5) with relations, indexes (books.title, books.publishedAt, book_categories.categoryId, orders.userId, orders.orderNumber); `npx prisma migrate dev --name init`; `src/lib/prisma.js` singleton; `db:migrate:test` script (`dotenv -e .env.test -- prisma migrate deploy` or equivalent).
 ✅ Verify: migrate status 1 applied on both DBs · Prisma Studio shows 21 tables · orders.userId NOT NULL · books.stockQuantity default 100.
 🧪 Tests: `tests/schema.test.js` — connects; every model `count()` returns number.
 
 #### MT-03 — Seed: catalog
-Status: [x] · Depends: MT-02
+Status: [ ] · Depends: MT-02
 Steps: `prisma/seed/` with data files; upsert categories (with parents), publishers, authors, 36 books (book_categories with one isPrimary), book_relations, store + policies, all with fixed ids/slugs. Export `seedCatalog(prisma)`. `"prisma": { "seed": "node prisma/seed/index.js" }`.
 ✅ Verify: 19 categories with showInSidebar true · 36 books · 12 authors · 4 publishers · every book has exactly one primary category · Joy of Minimalism = 14900 paise, publisher ABC Publishers · cover URLs load.
 🧪 Tests: `tests/seed.catalog.test.js` — counts above; design books exact prices/formats/authors; ≥4 non-English books; no "All" category row.
 
 #### MT-04 — Seed: users, orders, coupons, follows
-Status: [x] · Depends: MT-03
+Status: [ ] · Depends: MT-03
 Steps: upsert 3 users (bcrypt), customer address, Orders A and B with items, payments, shipments + events, gift transactions, coupons, follows. Export `seed(prisma)` that runs catalog + users. Wire `tests/globalSetup.js`: `prisma migrate reset --force --skip-seed` on bookworm_test then `seed(prisma)`. `tests/setup.js` loads `.env.test`. `tests/factories.js`: `createUser({role})` with unique email, `loginAs(email)`, `authHeader(token)`.
 ✅ Verify: `npm run db:seed` twice without error and identical counts · customer has 200 points, wallet 100000, 2 DELIVERED orders, 2 follows.
 🧪 Tests: `tests/seed.users.test.js` — counts; idempotency by calling `seed(prisma)` again and comparing counts of users/orders/coupons.
 
 #### MT-05 — OpenAPI 3.0 spec v1 (spec-first)
-Status: [x] · Depends: MT-04
+Status: [ ] · Depends: MT-04
 Steps: `openapi/openapi.yaml` with info, servers, BearerAuth, tags (Auth, Users, Catalog, Authors, Cart, Wishlist, Coupons, Orders, Payments, Shipments, Store, Admin, System); every path in Section 7 with params (uuid formats), request bodies, responses (incl. error schema), `security: []` on public paths; components/schemas (User, Address, Category, Publisher, Author, Book, BookDetail, Review, CartItem, Cart, Coupon, OrderTotals, Order, OrderItem, Payment, Shipment, ShipmentEvent, Paginated, Error); examples from seed data. Script `spec:validate` with swagger-parser.
 ✅ Verify: `npm run spec:validate` 0 errors · every Section 7 endpoint present · lookup/register/login/guest-session/catalog marked public.
 🧪 Tests: `tests/spec.test.js` — parser validates; asserts presence of key paths.
 
 #### MT-06 — Express app shell + test harness
-Status: [x] · Depends: MT-05
+Status: [ ] · Depends: MT-05
 Steps: `createApp(options)`: trust proxy, helmet, cors(CORS_ORIGIN), express.json, morgan (not in test), Swagger UI at `/api/docs` (spec path via `import.meta.dirname`), express-openapi-validator (apiSpec, validateRequests true, validateResponses = options.enableResponseValidation ?? NODE_ENV==='test', ignore /api/docs), `GET /api/health` → {status, version, timestamp}, 404 handler, error handler mapping validator errors → 400 `VALIDATION_ERROR`, AppError → status/code. `server.js`: dotenv, createApp, start sweeper placeholder, listen. vitest.config.js: environment node, globalSetup, setupFiles, `fileParallelism: false`.
 ✅ Verify: `npm run dev:api` starts · /api/health 200 · /api/docs loads · unknown route 404 JSON · CORS header for localhost:5173.
 🧪 Tests: `tests/health.test.js` — health 200; 404 shape; invalid uuid path param → 400 VALIDATION_ERROR (use an existing documented route once implemented, else health only).
@@ -293,13 +293,13 @@ Steps: `createApp(options)`: trust proxy, helmet, cors(CORS_ORIGIN), express.jso
 ### PHASE B — Identity
 
 #### MT-07 — Auth: register, login, profile, middlewares
-Status: [x] · Depends: MT-06
+Status: [ ] · Depends: MT-06
 Steps: auth module; register (lowercase email, 409 `EMAIL_IN_USE`, password ≥8 with uppercase + number, role CUSTOMER, JWT 7d); login (401 `INVALID_CREDENTIALS` for unknown/wrong/guest-without-password); JWT payload {id, email, role, firstName, lastName, gsid?}; `authenticate({optional})` (expired → 401 `TOKEN_EXPIRED`, invalid → 401 `UNAUTHORIZED`; optional ignores invalid token); `requireRole`, `requireRegistered`; GET/PUT /auth/profile (giftPoints, walletBalancePaise/Inr).
 ✅ Verify: checklist per Section 7 auth rows; passwordHash never returned.
 🧪 Tests: `auth.register-login.test.js` (201 + token, duplicate 409, weak password 400, login 200, wrong pwd 401, unknown 401); `auth.middleware.test.js` (no token 401, malformed 401, expired 401 TOKEN_EXPIRED via short-lived signed token, profile 200, admin route with CUSTOMER 403 using a test-only route registered via createApp option or the admin health route).
 
 #### MT-08 — Guest session + addresses
-Status: [x] · Depends: MT-07
+Status: [ ] · Depends: MT-07
 Steps: `POST /auth/guest-session` per Section 8 (409 ACCOUNT_EXISTS for registered emails; new gsid per call); guest-scope helper `assertOrderAccess(user, order)`; addresses CRUD under `/users/me/addresses` (registered only; default switching in transaction; 404 for another user's address id).
 ✅ Verify: guest JWT role GUEST, exp ≈ 24h, contains gsid · same email twice → same user id, different gsid · customer@test.com → 409 · registered user's role/password untouched after attempted guest-session.
 🧪 Tests: `auth.guest.test.js` (above cases, missing email 400); `users.addresses.test.js` (empty list, create, set default clears previous, update, delete, other user's id → 404, GUEST → 403).
@@ -307,25 +307,25 @@ Steps: `POST /auth/guest-session` per Section 8 (409 ACCOUNT_EXISTS for register
 ### PHASE C — Catalog
 
 #### MT-09 — Categories, publishers, books list
-Status: [x] · Depends: MT-08
+Status: [ ] · Depends: MT-08
 Steps: GET /categories (tree, sidebar order), GET /publishers, GET /publishers/:id; GET /books with all filters/sort/pagination (Section 7–8), category filter includes children; each book returns author {id,name,slug}, publisher, categories [{name,slug,isPrimary}], pricePaise/priceInr, deliveryText. Register static routes before `/:id`.
 ✅ Verify: category=self-help returns only self-help books · publisher=abc-publishers works · search=minimalism finds Joy of Minimalism · price range, sort, pagination correct · language=Hindi works.
 🧪 Tests: `catalog.books.test.js` — each filter, combined filters, sort orders, pagination math, pageSize cap, priceInr format.
 
 #### MT-10 — Book detail, reviews, related, up-sell/cross-sell
-Status: [x] · Depends: MT-09
+Status: [ ] · Depends: MT-09
 Steps: GET /books/:id (author bio/photo, publisher, categories, primary breadcrumb [parent, primary], reviews with first names, relatedBooks ≤5, upsell[], crossSell[], deliveryText, salesCount, ratingAvg/Count, isWishlisted/isFollowingAuthor when authenticated); POST /books/:id/reviews (registered, 1–5, ≤100 chars, upsert, recompute rating).
 ✅ Verify: invalid uuid 400 · unknown uuid 404 · Joy of Minimalism shows cross-sell The Focus Reset · review upsert changes rating.
 🧪 Tests: `catalog.detail.test.js` — shape, 404/400, related excludes self, review auth 401, GUEST 403, rating 6 → 400, comment 101 chars → 400, upsert.
 
 #### MT-11 — Recommendations, bestsellers, new launches
-Status: [x] · Depends: MT-10
+Status: [ ] · Depends: MT-10
 Steps: `recommendation.service.js` with `$queryRaw` (casts), Section 8 scoring; endpoints with optional auth; response `{ source, items }`.
 ✅ Verify: anonymous → editors_pick (Art of Focus, Art of Learning, Path to Success) · customer → personalised, excludes Less But Better/The Focus Reset, includes self-help design books · bestsellers top 3 = Midnight Hour, Beneath the Stars, Final Frontier · new launches top 3 = Joy of Minimalism, Vanishing House, Lost Kitten.
 🧪 Tests: `catalog.recommendations.test.js` — the above; fresh@test.com → editors_pick; JSON has no BigInt errors.
 
 #### MT-12 — Authors + follow system
-Status: [x] · Depends: MT-11
+Status: [ ] · Depends: MT-11
 Steps: GET /authors (+isFollowing), GET /authors/:id (books, bookCount), following, following/new-releases (12 newest), suggestions, follow/unfollow (MANUAL). Static routes before `/:id`.
 ✅ Verify: 12 authors · customer sees 2 following · follow 201, duplicate 409, unfollow 200, unfollow again 404 · suggestions exclude followed.
 🧪 Tests: `authors.test.js` — above, GUEST follow 403, use fresh factory user for mutation tests.
@@ -333,60 +333,60 @@ Steps: GET /authors (+isFollowing), GET /authors/:id (books, bookCount), followi
 ### PHASE D — Commerce
 
 #### MT-13 — Cart, merge, buy-again
-Status: [x] · Depends: MT-12
+Status: [ ] · Depends: MT-12
 Steps: cart service returning `{ items:[{book, quantity, lineTotalPaise/Inr}], itemCount, subtotalPaise/Inr }`; add (stock check 409), update (0 removes), remove, clear, merge (Section 8), buy-again (registered, owner, skip out-of-stock, returns skipped list).
 ✅ Verify: empty cart shape · add twice increments · over-stock 409 · merge sums + caps · buy-again on Order A adds 2 books · user isolation.
 🧪 Tests: `cart.test.js` — all above with factory users.
 
 #### MT-14 — Wishlist
-Status: [x] · Depends: MT-13
+Status: [ ] · Depends: MT-13
 Steps: list (book details), add (idempotent 200), remove (404 if absent); registered only.
 ✅ Verify / 🧪 Tests: `wishlist.test.js` — add, idempotent add, list, remove, remove-missing 404, GUEST 403, anonymous 401.
 
 #### MT-15 — Coupons validate + pricing integration
-Status: [x] · Depends: MT-14
+Status: [ ] · Depends: MT-14
 Steps: POST /coupons/validate {code, subtotalPaise} → {valid, discountPaise/Inr, reason?} (invalid, expired, inactive, min-order, usage limit). Checkout service will call shared `computeOrderTotals`.
 ✅ Verify: BOOK10 on ₹508 → ₹100 · SAVE20 on ₹1500 → capped ₹200 · EXPIRED10 → invalid EXPIRED · BOOK10 on ₹200 → MIN_ORDER_NOT_MET.
 🧪 Tests: `coupons.test.js` — each case.
 
 #### MT-16 — Checkout with stock reservation + sweeper
-Status: [x] · Depends: MT-15
+Status: [ ] · Depends: MT-15
 Steps: POST /orders/checkout per Section 8 (body: addressId | address, saveAddress, couponCode, giftPointsToRedeem, paymentMethod); validate points ≤ balance and GUEST cannot redeem points; `jobs/reservationSweeper.js` with exported `expireReservations(now)` + `startSweeper()` called from server.js.
 ✅ Verify: order PENDING with orderNumber BW-…, reservedUntil +30 min, totals = shared function · stock decremented · cart unchanged · coupon usedCount unchanged · points unchanged · insufficient stock 409 and nothing changed · second checkout releases first PENDING · expireReservations restores stock and sets EXPIRED.
 🧪 Tests: `checkout.test.js` — above; design cart totals (₹508 + BOOK10 → total 46896 paise); guest checkout sets guestSessionId + contactEmail.
 
 #### MT-17 — Payments: initiate, confirm, wallet
-Status: [x] · Depends: MT-16
+Status: [ ] · Depends: MT-16
 Steps: payments module per Section 8; store only last4 / masked UPI; GET /payments/wallet; auto-follow; shipment creation via shipment service (stub in this MT if MT-18 not done — create minimal createShipment now, extend in MT-18).
 ✅ Verify: success → CONFIRMED/PAID, cart items removed, coupon usedCount +1, points debited and credited (transactions), salesCount +1, shipment PROCESSING, authors followed · forceFailure → FAILED, order still PENDING, retry succeeds · expired reservation → 409 · WALLET insufficient → FAILED · eBook-only order → shipment DELIVERED · DB contains no full card number.
 🧪 Tests: `payments.test.js` — each case; guest with other gsid → 403.
 
 #### MT-18 — Shipments: tracking, rate, events, simulator, returns
-Status: [x] · Depends: MT-17
+Status: [ ] · Depends: MT-17
 Steps: shipment service (createShipment FORWARD/RETURN, addEvent, advance), GET /shipments/order/:orderId (with events timeline), POST /shipments/calculate-rate, POST /admin/shipments/:id/advance (ADMIN) syncing order status (Section 8).
 ✅ Verify: tracking TRK-… · advance sequence to DELIVERED sets order DELIVERED · rate free ≥ ₹500, ₹49 below, eBook-only free · ETA skips weekends.
 🧪 Tests: `shipments.test.js` — rate cases, advance sequence, non-admin 403, events recorded.
 
 #### MT-19 — Orders: history, detail, cancel/refund, return, modify address
-Status: [x] · Depends: MT-18
+Status: [ ] · Depends: MT-18
 Steps: GET /orders (paginated, newest first, thumbnails, flags), GET /orders/:id (items, address snapshot, payment method + last4, shipments + events, flags), cancel (Section 8 refunds), return (creates RETURN shipment; RETURNED + refund when advanced to DELIVERED), PATCH address.
 ✅ Verify: customer sees 2 seeded orders · Order A canCancel false, canReturn false (30 days) · Order B canReturn true · fresh order cancel → stock restored, points reversed, coupon usedCount −1, payment REFUNDED, wallet refunded if WALLET · cancel after SHIPPED → 409 · other user's order → 404.
 🧪 Tests: `orders.test.js` — each rule; time-based checks using orders with backdated createdAt via Prisma.
 
 #### MT-20 — Guest order lookup + account conversion
-Status: [x] · Depends: MT-19
+Status: [ ] · Depends: MT-19
 Steps: public lookup router (rate-limited, generic 404); PUT /auth/set-password per Section 8.
 ✅ Verify: guest flow end-to-end: guest-session → cart → checkout → pay → lookup(email, orderNumber) 200 → set-password → login → GET /orders includes the guest order · wrong email/orderNumber 404 · set-password without order in gsid → 403 · CUSTOMER calling set-password → 400 · 4th lookup on createApp({lookupLimit:3}) → 429.
 🧪 Tests: `guest.flow.test.js` — full flow + negatives.
 
 #### MT-21 — Admin / Store API
-Status: [x] · Depends: MT-20
+Status: [ ] · Depends: MT-20
 Steps: GET /stores/:slug (public, with policies); ADMIN CRUD for books (with categories, relations), categories, publishers, authors, coupons, stores, policies; GET /admin/orders (filters status, paginated).
 ✅ Verify: admin creates a book → appears in catalog · customer → 403 · deleting a category with books → 409.
 🧪 Tests: `admin.test.js` — CRUD happy paths + 403 + 409.
 
 #### MT-22 — Contract reconciliation, Insomnia, PR #1
-Status: [x] · Depends: MT-21
+Status: [ ] · Depends: MT-21
 Steps: run full api suite with response validation on; fix spec/code drift; add examples; export Insomnia collection (environment base_url, token vars) to `docs/insomnia/bookworm.json`; push branch; open PR #1 "Implement BookWorm API".
 ✅ Verify: `npm test -w packages/api` green with response validation · spec:validate green · Insomnia collection imports and runs login → checkout → pay.
 🧪 Tests: none new; full suite must pass.
