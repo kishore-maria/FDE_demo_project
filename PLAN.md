@@ -430,7 +430,7 @@ Steps: Section 10 layout; wishlist toggle (anonymous/guest → login redirect); 
 🧪 Tests: `BookDetailPage.test.jsx` — renders data, review counter limit, wishlist toggle.
 
 #### MT-29 — Cart + Checkout page
-Status: [ ] · Depends: MT-28
+Status: [x] · Depends: MT-28
 Steps: Section 10 layout; guest gate → guest-session (409 → "Account exists, please login") → `syncAfterAuth()`; editable qty/remove with ConfirmDialog; AddressForm + Use Saved Address + Save address; coupon apply via /coupons/validate; gift points toggle (registered with points); preview totals via shared `computeOrderTotals`; Pay Now → POST /orders/checkout → open PaymentModal with server totals; EmptyState when cart empty.
 ✅ Verify: design cart (Joy of Minimalism + Path to Success) shows Price ₹508.00, Delivery Free, BOOK10 discount ₹100 · guest gate works · registered saved address prefill · insufficient stock message.
 🧪 Tests: `CheckoutPage.test.jsx` — guest gate, coupon apply, totals, validation errors.
