@@ -78,3 +78,54 @@ export async function withStock(slug, stockQuantity, fn) {
     await prisma.book.update({ where: { id }, data: { stockQuantity: original } });
   }
 }
+
+export const TEST_ADDRESS = Object.freeze({
+  firstName: 'Asha',
+  lastName: 'Rao',
+  email: 'asha@example.com',
+  phone: '9876543210',
+  line1: '12 Lake Road',
+  city: 'Chennai',
+  pin: '600001',
+  state: 'Tamil Nadu',
+});
+
+/**
+ * Creates a user with the given cart ([[slug, qty], ...]) and returns auth headers.
+ * Guests get a fresh gsid.
+ */
+export async function createShopper({ role = 'CUSTOMER', cart = [], ...overrides } = {}) {
+  const { user, email, password } = await createUser({ role, ...overrides });
+  for (const [slug, quantity] of cart) {
+    await prisma.cartItem.create({ data: { userId: user.id, bookId: stableId('book', slug), quantity } });
+  }
+  const gsid = role === 'GUEST' ? randomUUID() : undefined;
+  const token = tokenFor(user, gsid ? { gsid } : undefined);
+  return { user, email, password, gsid, token, headers: authHeader(token) };
+}
+
+/** Checks out the shopper's cart through the API and returns the PENDING order. */
+export async function checkoutCart(app, headers, body = {}) {
+  const res = await request(app)
+    .post('/api/orders/checkout')
+    .set(headers)
+    .send({ address: TEST_ADDRESS, paymentMethod: 'UPI', ...body });
+  if (res.status !== 201) throw new Error(`checkout failed: ${res.status} ${res.text}`);
+  return res.body.order;
+}
+
+/** initiate + confirm; returns the confirm response. */
+export async function payOrder(app, headers, orderId, { method = 'UPI', ...confirm } = {}) {
+  const session = await request(app).post('/api/payments/initiate').set(headers).send({ orderId, method });
+  if (session.status !== 200) throw new Error(`initiate failed: ${session.status} ${session.text}`);
+  const paymentInput =
+    method === 'UPI'
+      ? { upiId: 'asha.rao@okaxis' }
+      : method === 'WALLET'
+        ? {}
+        : { card: { number: '4242 4242 4242 4242', nameOnCard: 'Asha Rao', expiry: '12/2030', cvv: '123' } };
+  return request(app)
+    .post('/api/payments/confirm')
+    .set(headers)
+    .send({ sessionId: session.body.sessionId, ...paymentInput, ...confirm });
+}

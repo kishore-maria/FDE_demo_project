@@ -356,7 +356,7 @@ Steps: POST /orders/checkout per Section 8 (body: addressId | address, saveAddre
 🧪 Tests: `checkout.test.js` — above; design cart totals (₹508 + BOOK10 → total 46896 paise); guest checkout sets guestSessionId + contactEmail.
 
 #### MT-17 — Payments: initiate, confirm, wallet
-Status: [ ] · Depends: MT-16
+Status: [x] · Depends: MT-16
 Steps: payments module per Section 8; store only last4 / masked UPI; GET /payments/wallet; auto-follow; shipment creation via shipment service (stub in this MT if MT-18 not done — create minimal createShipment now, extend in MT-18).
 ✅ Verify: success → CONFIRMED/PAID, cart items removed, coupon usedCount +1, points debited and credited (transactions), salesCount +1, shipment PROCESSING, authors followed · forceFailure → FAILED, order still PENDING, retry succeeds · expired reservation → 409 · WALLET insufficient → FAILED · eBook-only order → shipment DELIVERED · DB contains no full card number.
 🧪 Tests: `payments.test.js` — each case; guest with other gsid → 403.

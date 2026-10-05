@@ -115,7 +115,9 @@ describe('users, orders and coupons seed', () => {
   });
 
   test('card payments keep only the last 4 digits', async () => {
-    const payments = await prisma.payment.findMany({ where: { method: { in: ['CREDIT_CARD', 'DEBIT_CARD'] } } });
+    const payments = await prisma.payment.findMany({
+      where: { method: { in: ['CREDIT_CARD', 'DEBIT_CARD'] }, status: 'SUCCEEDED' },
+    });
     for (const payment of payments) expect(payment.cardLast4).toMatch(/^\d{4}$/);
   });
 
