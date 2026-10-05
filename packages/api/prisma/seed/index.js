@@ -15,8 +15,13 @@ const isCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[
 if (isCli) {
   const prisma = new PrismaClient();
   try {
-    const summary = await seed(prisma);
-    console.log('Seed complete:', JSON.stringify(summary));
+    // --if-empty: seed only a fresh database, so restarts keep demo changes (used on hosts that sleep).
+    if (process.argv.includes('--if-empty') && (await prisma.user.count()) > 0) {
+      console.log('Seed skipped: database already has data');
+    } else {
+      const summary = await seed(prisma);
+      console.log('Seed complete:', JSON.stringify(summary));
+    }
   } catch (error) {
     console.error('Seed failed:', error);
     process.exitCode = 1;
