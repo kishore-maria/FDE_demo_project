@@ -459,7 +459,7 @@ Steps: Your Writers (AuthorCard, unfollow with ConfirmDialog, optimistic), New f
 🧪 Tests: `MyWritersPage.test.jsx`, `AuthorCard.test.jsx`.
 
 #### MT-34 — Track Order page
-Status: [ ] · Depends: MT-33
+Status: [x] · Depends: MT-33
 Steps: public form (email + order number BW-…), prefill from `?orderNumber=&email=`, POST /orders/lookup without auth header, result card (status, items, timeline, ETA), not-found message, 429 message, login link.
 ✅ Verify: guest order found · wrong details message.
 🧪 Tests: `TrackOrderPage.test.jsx`.
