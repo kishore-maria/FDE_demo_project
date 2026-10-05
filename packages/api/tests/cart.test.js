@@ -3,8 +3,7 @@ import request from 'supertest';
 import { afterAll, describe, expect, test } from 'vitest';
 import { stableId } from '../prisma/seed/ids.js';
 import { createApp } from '../src/app.js';
-import { prisma } from '../src/lib/prisma.js';
-import { authHeader, createOrder, createUser, loginAs, tokenFor } from './factories.js';
+import { authHeader, createOrder, createUser, loginAs, tokenFor, withStock } from './factories.js';
 
 const app = createApp();
 const bookId = (slug) => stableId('book', slug);
@@ -25,17 +24,6 @@ async function newCart(role = 'CUSTOMER') {
   const { user } = await createUser({ role });
   const token = role === 'GUEST' ? tokenFor(user, { gsid: randomUUID() }) : tokenFor(user);
   return { user, cart: api(authHeader(token)) };
-}
-
-/** Temporarily sets a book's stock (restored afterwards) so tests can hit stock limits. */
-async function withStock(slug, stockQuantity, fn) {
-  const { stockQuantity: original } = await prisma.book.findUnique({ where: { id: bookId(slug) } });
-  await prisma.book.update({ where: { id: bookId(slug) }, data: { stockQuantity } });
-  try {
-    return await fn();
-  } finally {
-    await prisma.book.update({ where: { id: bookId(slug) }, data: { stockQuantity: original } });
-  }
 }
 
 const quantities = (res) => Object.fromEntries(res.body.items.map((i) => [i.book.slug, i.quantity]));

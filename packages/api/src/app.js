@@ -13,6 +13,7 @@ import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { couponsRouter } from './modules/coupons/coupons.routes.js';
+import { ordersRouter } from './modules/orders/orders.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 import { wishlistRouter } from './modules/wishlist/wishlist.routes.js';
 
@@ -84,6 +85,7 @@ export function createApp(options = {}) {
   api.use('/cart', cartRouter);
   api.use('/wishlist', wishlistRouter);
   api.use('/coupons', couponsRouter);
+  api.use('/orders', ordersRouter);
   api.use(catalogRouter);
 
   app.use('/api', api);

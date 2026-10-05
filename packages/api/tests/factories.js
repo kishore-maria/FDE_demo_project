@@ -66,3 +66,15 @@ export function createOrder(userId, bookSlugs, status = 'DELIVERED') {
     },
   });
 }
+
+/** Temporarily sets a seeded book's stock, restoring the original value afterwards. */
+export async function withStock(slug, stockQuantity, fn) {
+  const id = stableId('book', slug);
+  const { stockQuantity: original } = await prisma.book.findUnique({ where: { id } });
+  await prisma.book.update({ where: { id }, data: { stockQuantity } });
+  try {
+    return await fn();
+  } finally {
+    await prisma.book.update({ where: { id }, data: { stockQuantity: original } });
+  }
+}
