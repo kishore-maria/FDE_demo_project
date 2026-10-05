@@ -19,3 +19,7 @@ export async function getProfile(req, res) {
 export async function updateProfile(req, res) {
   res.json(await authService.updateProfile(req.user.id, req.body));
 }
+
+export async function setPassword(req, res) {
+  res.json(await authService.setPassword(req.user, req.body));
+}

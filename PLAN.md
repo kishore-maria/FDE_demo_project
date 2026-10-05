@@ -374,7 +374,7 @@ Steps: GET /orders (paginated, newest first, thumbnails, flags), GET /orders/:id
 🧪 Tests: `orders.test.js` — each rule; time-based checks using orders with backdated createdAt via Prisma.
 
 #### MT-20 — Guest order lookup + account conversion
-Status: [ ] · Depends: MT-19
+Status: [x] · Depends: MT-19
 Steps: public lookup router (rate-limited, generic 404); PUT /auth/set-password per Section 8.
 ✅ Verify: guest flow end-to-end: guest-session → cart → checkout → pay → lookup(email, orderNumber) 200 → set-password → login → GET /orders includes the guest order · wrong email/orderNumber 404 · set-password without order in gsid → 403 · CUSTOMER calling set-password → 400 · 4th lookup on createApp({lookupLimit:3}) → 429.
 🧪 Tests: `guest.flow.test.js` — full flow + negatives.

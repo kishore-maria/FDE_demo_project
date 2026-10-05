@@ -13,6 +13,10 @@ export async function getOrder(req, res) {
   res.json(await orders.getOrder(req.user, req.params.orderId));
 }
 
+export async function lookupOrder(req, res) {
+  res.json(await orders.lookupOrder(req.body));
+}
+
 export async function cancelOrder(req, res) {
   res.json(await orders.cancelOrder(req.user, req.params.orderId));
 }

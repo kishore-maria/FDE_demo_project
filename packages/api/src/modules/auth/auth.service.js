@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
-import { conflict, unauthorized } from '../../lib/errors.js';
+import { badRequest, conflict, forbidden, unauthorized } from '../../lib/errors.js';
 import { signToken } from '../../lib/jwt.js';
 import { hashPassword, verifyPassword } from '../../lib/password.js';
 import { prisma } from '../../lib/prisma.js';
@@ -92,4 +92,36 @@ export async function updateProfile(userId, { firstName, lastName, phone }) {
     },
   });
   return serializeUser(user);
+}
+
+/**
+ * PUT /auth/set-password — turns a guest into a CUSTOMER, keeping the same user id so every guest order
+ * shows up in My Orders. Only allowed from a guest session that actually placed (paid for) an order.
+ */
+export async function setPassword(authUser, { password, confirmPassword }) {
+  if (authUser.role !== 'GUEST') {
+    throw badRequest('This account already has a password', undefined, 'ALREADY_REGISTERED');
+  }
+  if (password !== confirmPassword) {
+    throw badRequest('Passwords do not match', { field: 'confirmPassword' }, 'PASSWORDS_DO_NOT_MATCH');
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { userId: authUser.id, guestSessionId: authUser.gsid ?? '', confirmedAt: { not: null } },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!order) throw forbidden('Place an order in this session before creating a password', 'NO_GUEST_ORDER');
+
+  const current = await prisma.user.findUnique({ where: { id: authUser.id } });
+  const user = await prisma.user.update({
+    where: { id: authUser.id },
+    data: {
+      passwordHash: await hashPassword(password),
+      role: 'CUSTOMER',
+      firstName: current.firstName || order.shippingAddress.firstName || '',
+      lastName: current.lastName || order.shippingAddress.lastName || '',
+      phone: current.phone ?? order.shippingAddress.phone ?? null,
+    },
+  });
+  return authResponse(user);
 }

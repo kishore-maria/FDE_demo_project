@@ -1,9 +1,17 @@
 import { assertOrderAccess } from '../../lib/access.js';
-import { conflict } from '../../lib/errors.js';
+import { conflict, notFound } from '../../lib/errors.js';
 import { prisma } from '../../lib/prisma.js';
 import { createShipment } from '../shipments/shipments.service.js';
 import { toAddressData } from '../users/addresses.serializer.js';
-import { orderFlags, orderInclude, serializeOrder, serializeOrderSummary } from './orders.serializer.js';
+import {
+  orderFlags,
+  orderInclude,
+  serializeOrder,
+  serializeOrderItem,
+  serializeOrderSummary,
+  serializeShipment,
+  serializeTotals,
+} from './orders.serializer.js';
 import { refundOrder } from './refunds.js';
 import { releaseReservation } from './reservations.js';
 
@@ -51,6 +59,30 @@ export async function listOrders(userId, query, now = new Date()) {
 
 export async function getOrder(user, orderId, now = new Date()) {
   return serializeOrder(await loadAccessibleOrder(user, orderId), now);
+}
+
+/**
+ * POST /orders/lookup — public Track Order. Email (case-insensitive) and order number must both match;
+ * anything else is the same generic 404. No address or payment details are returned.
+ */
+export async function lookupOrder({ email, orderNumber }) {
+  const order = await prisma.order.findFirst({
+    where: {
+      orderNumber: orderNumber.toUpperCase(),
+      contactEmail: { equals: email.trim(), mode: 'insensitive' },
+    },
+    include: orderInclude,
+  });
+  if (!order) throw notFound('No order matches that email and order number');
+  return {
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    createdAt: order.createdAt,
+    items: order.items.map(serializeOrderItem),
+    totals: serializeTotals(order),
+    shipments: order.shipments.map(serializeShipment),
+  };
 }
 
 /** Runs `change` in a transaction after re-checking the order's flag, then returns the fresh order. */

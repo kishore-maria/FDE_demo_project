@@ -3,10 +3,12 @@ import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import express from 'express';
 import * as OpenApiValidator from 'express-openapi-validator';
+import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
+import { AppError } from './lib/errors.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { adminRouter } from './modules/admin/admin.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
@@ -14,6 +16,7 @@ import { authorsRouter } from './modules/authors/authors.routes.js';
 import { cartRouter } from './modules/cart/cart.routes.js';
 import { catalogRouter } from './modules/catalog/catalog.routes.js';
 import { couponsRouter } from './modules/coupons/coupons.routes.js';
+import { lookupOrder } from './modules/orders/orders.controller.js';
 import { ordersRouter } from './modules/orders/orders.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
 import { shipmentsRouter } from './modules/shipments/shipments.routes.js';
@@ -88,6 +91,16 @@ export function createApp(options = {}) {
   api.use('/cart', cartRouter);
   api.use('/wishlist', wishlistRouter);
   api.use('/coupons', couponsRouter);
+  // Created per app so each test app (and its lookupLimit) gets its own counter.
+  const lookupLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: config.lookupLimit,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    handler: (req, res, next) =>
+      next(new AppError(429, 'RATE_LIMITED', 'Too many requests, please try again later')),
+  });
+  api.post('/orders/lookup', lookupLimiter, lookupOrder);
   api.use('/orders', ordersRouter);
   api.use('/payments', paymentsRouter);
   api.use('/shipments', shipmentsRouter);
