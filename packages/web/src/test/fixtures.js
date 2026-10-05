@@ -88,3 +88,92 @@ export function cartResponse(lines) {
     subtotalInr: `₹${subtotalPaise / 100}`,
   };
 }
+
+const orderItem = (book, quantity = 1) => ({
+  id: `item-${book.slug}`,
+  bookId: book.id,
+  title: book.title,
+  authorName: book.author.name,
+  coverImageUrl: book.coverImageUrl,
+  format: book.format,
+  quantity,
+  priceAtPurchasePaise: book.pricePaise,
+  priceAtPurchaseInr: book.priceInr,
+  lineTotalPaise: book.pricePaise * quantity,
+  lineTotalInr: `₹${(book.pricePaise * quantity) / 100}`,
+  deliveryDate: null,
+});
+
+export const shipment = (overrides = {}) => ({
+  id: 'ship-1',
+  type: 'FORWARD',
+  trackingNumber: 'TRK-TEST00001',
+  carrier: 'BookWorm Express',
+  status: 'PROCESSING',
+  estimatedDelivery: '2026-10-08T00:00:00.000Z',
+  estimatedDeliveryText: 'Delivery by Thu, 8 Oct',
+  actualDelivery: null,
+  events: [{ status: 'PROCESSING', note: 'Order is being packed', occurredAt: '2026-10-04T09:00:00.000Z' }],
+  ...overrides,
+});
+
+/** Full API Order (GET /orders/:id); OrderSummary fields are a subset. */
+export function orderFixture(overrides = {}) {
+  return {
+    id: 'order-1',
+    orderNumber: 'BW-TEST0001',
+    status: 'CONFIRMED',
+    paymentStatus: 'PAID',
+    createdAt: '2026-10-04T09:00:00.000Z',
+    contactEmail: 'customer@test.com',
+    couponCode: null,
+    paymentMethod: 'UPI',
+    totals: {
+      itemCount: 2,
+      subtotalPaise: 50800,
+      subtotalInr: '₹508',
+      taxPaise: 6096,
+      taxInr: '₹60.96',
+      deliveryChargePaise: 0,
+      deliveryChargeInr: '₹0',
+      couponDiscountPaise: 0,
+      couponDiscountInr: '₹0',
+      giftDiscountPaise: 0,
+      giftDiscountInr: '₹0',
+      totalPaise: 56896,
+      totalInr: '₹568.96',
+      giftPointsRedeemed: 0,
+      giftPointsEarned: 28,
+    },
+    items: [orderItem(joy), orderItem(path)],
+    flags: { canCancel: false, canReturn: false, canModifyAddress: false },
+    shippingAddress: {
+      firstName: 'John',
+      lastName: 'Smith',
+      email: 'customer@test.com',
+      phone: '9876543210',
+      line1: '221 MG Road',
+      line2: null,
+      city: 'Bengaluru',
+      pin: '560001',
+      state: 'Karnataka',
+      country: 'India',
+    },
+    payments: [
+      {
+        id: 'pay-1',
+        sessionId: 's-1',
+        method: 'UPI',
+        amountPaise: 56896,
+        amountInr: '₹568.96',
+        status: 'SUCCEEDED',
+        cardLast4: null,
+        upiHandleMasked: 'jo***@okaxis',
+        createdAt: '2026-10-04T09:00:00.000Z',
+        refundedAt: null,
+      },
+    ],
+    shipments: [shipment()],
+    ...overrides,
+  };
+}

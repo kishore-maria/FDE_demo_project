@@ -442,7 +442,7 @@ Steps: PaymentModal (tabs, card formatting/masking, UPI, Wallet balance with ins
 🧪 Tests: `PaymentModal.test.jsx` (tabs, payload has no CVV persisted beyond request, failure + retry), `PaymentSuccessOverlay.test.jsx` (guest vs registered content).
 
 #### MT-31 — Orders list + detail
-Status: [ ] · Depends: MT-30
+Status: [x] · Depends: MT-30
 Steps: OrdersPage (orderNumber, date, thumbnails, total, StatusBadge, Buy Again, Cancel per canCancel with ConfirmDialog); OrderDetailPage (items, address, payment, ShipmentTimeline, Return per canReturn, Change address per canModifyAddress).
 ✅ Verify: seeded orders visible · Buy Again → cart · cancel fresh order · return Order B.
 🧪 Tests: `OrdersPage.test.jsx` — flags drive buttons.
