@@ -105,6 +105,39 @@ docker compose up --build          # or: podman compose up --build
 - If port 5432 is already used by a local PostgreSQL: `POSTGRES_PORT=5433 docker compose up --build`.
 - Set a real `JWT_SECRET` in the environment for anything beyond a local demo.
 
+## Deploy to Render + Neon (free)
+
+A public review environment on free tiers: **one Render web service** built from the root [`Dockerfile`](../Dockerfile) (the API also serves the built web app, so there is a single URL) and a **Neon** PostgreSQL database. Configuration lives in [`render.yaml`](../render.yaml).
+
+**1. Create the database (Neon)**
+1. Sign up at https://neon.com (GitHub login works) → **New project** → name `bookworm`, Postgres 16+, region **Asia Pacific (Singapore)** (closest to the Render service).
+2. **Connect** → turn **Connection pooling off** → copy the connection string. It looks like `postgresql://user:password@ep-xxxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require`.
+3. Append `&connect_timeout=15` (Neon sleeps when idle and needs a moment to wake). Keep this string private.
+
+**2. Create the service (Render)**
+1. Sign up at https://render.com with GitHub and allow access to the `FDE_demo_project` repository.
+2. **New → Blueprint** → pick the repository → branch **`develop`** → Render reads `render.yaml`.
+3. When asked for `DATABASE_URL`, paste the Neon string from step 1. `JWT_SECRET` is generated automatically.
+4. **Apply**. The first build takes ~5–10 minutes. On first start the container runs migrations and seeds the demo data into the empty database.
+5. Open `https://bookworm-<suffix>.onrender.com` (shown on the service page). Swagger is at `/api/docs`.
+
+**3. Share with the reviewer**
+- App URL and demo accounts (`customer@test.com` / `Test@1234`, `admin@bookworm.com` / `Admin@1234`).
+- The free service sleeps after ~15 minutes without traffic; the first request then takes up to a minute. Open the link shortly before a review.
+
+**Behaviour and maintenance**
+- Every push to `develop` redeploys automatically.
+- `SEED_ON_START=if-empty` seeds only an empty database, so wake-ups keep reviewers' orders. To reset the demo data, run `npm run db:reset` locally with `DATABASE_URL` pointing at Neon, or delete and recreate the Neon database, then redeploy.
+- Change demo passwords before sharing the link widely; never put real customer data in this environment.
+- Clean up after the review: delete the Render service and the Neon project.
+
+| Symptom on Render | Fix |
+|---|---|
+| Deploy fails with `P1001` / timeout | Check `DATABASE_URL` (direct string, `sslmode=require`, `connect_timeout=15`) and that the Neon project is active |
+| `prepared statement … already exists` or migrations hang | You used the **pooled** (`-pooler`) string — use the direct one |
+| Page loads but images are missing | The browser blocks third-party images (picsum.photos / pravatar.cc); allow them or use another network |
+| First request is very slow | Normal for the free plan after idle time |
+
 ## Common errors
 
 | Symptom | Cause | Fix |

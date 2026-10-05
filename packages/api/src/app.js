@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import express from 'express';
@@ -40,17 +41,36 @@ function corsOrigins() {
     .filter(Boolean);
 }
 
+/** Serves the built SPA (single-service deployments); client-side routes fall back to index.html. */
+function serveWebApp(app, webDir) {
+  app.use(
+    express.static(webDir, {
+      index: false,
+      setHeaders: (res, filePath) => {
+        const hashed = filePath.includes(`${path.sep}assets${path.sep}`);
+        res.setHeader('Cache-Control', hashed ? 'public, max-age=31536000, immutable' : 'no-cache');
+      },
+    }),
+  );
+  app.get(/^\/(?!api(?:\/|$)).*/, (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache');
+    res.sendFile(path.join(webDir, 'index.html'));
+  });
+}
+
 /**
  * Builds the Express app without listening, so tests can drive it with supertest.
  * @param {object} [options]
  * @param {boolean} [options.enableResponseValidation] validate responses against openapi.yaml (default: on in tests)
  * @param {number} [options.lookupLimit] max public order lookups per minute per IP
+ * @param {string} [options.webDir] built web app to serve from `/` (default: WEB_DIST_DIR env)
  * @param {(router: import('express').Router) => void} [options.registerTestRoutes] test-only hook, mounted before module routes
  */
 export function createApp(options = {}) {
   const config = {
     enableResponseValidation: options.enableResponseValidation ?? process.env.NODE_ENV === 'test',
     lookupLimit: options.lookupLimit ?? Number(process.env.RATE_LIMIT_LOOKUP_MAX ?? 10),
+    webDir: options.webDir ?? process.env.WEB_DIST_DIR,
   };
 
   const app = express();
@@ -58,12 +78,15 @@ export function createApp(options = {}) {
   app.disable('x-powered-by');
   app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
 
-  app.use(helmet());
+  // Book covers and author photos come from external HTTPS image hosts.
+  app.use(helmet({ contentSecurityPolicy: { directives: { 'img-src': ["'self'", 'data:', 'https:'] } } }));
   app.use(cors({ origin: corsOrigins() }));
   app.use(express.json({ limit: '100kb' }));
   if (process.env.NODE_ENV !== 'test') {
     app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
   }
+
+  if (config.webDir) serveWebApp(app, config.webDir);
 
   app.get('/api/docs/openapi.json', (req, res) => res.json(openApiDocument));
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: 'BookWorm API' }));

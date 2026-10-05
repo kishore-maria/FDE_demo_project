@@ -47,6 +47,8 @@ npm run dev                                   # web http://localhost:5173 · api
 
 **Everything in containers:** `docker compose up --build` → http://localhost:5173 (use `POSTGRES_PORT=5433` if 5432 is taken).
 
+**Free public review environment:** Render (one web service) + Neon (PostgreSQL) via [`render.yaml`](render.yaml) — steps in [docs/developer-guide.md](docs/developer-guide.md#deploy-to-render--neon-free).
+
 ### Demo accounts and coupons
 
 | Account | Password | Notes |
